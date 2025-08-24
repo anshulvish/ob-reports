@@ -4,7 +4,7 @@ import { EngagementAnalysisResult } from '../types/engagement';
 import { UserJourney } from '../types/journey';
 import { ScreenFlowAnalysis } from '../types/screenFlow';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://localhost:64547/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
