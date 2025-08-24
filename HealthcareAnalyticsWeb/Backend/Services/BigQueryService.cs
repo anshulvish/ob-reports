@@ -10,21 +10,31 @@ namespace HealthcareAnalyticsWeb.Services;
 
 public class BigQueryService : IBigQueryService
 {
-    private readonly BigQueryClient _bigQueryClient;
+    private readonly IBigQueryClientService _bigQueryClientService;
     private readonly ILogger<BigQueryService> _logger;
     private readonly ICacheService _cache;
     private readonly BigQueryConfig _config;
 
     public BigQueryService(
-        BigQueryClient bigQueryClient,
+        IBigQueryClientService bigQueryClientService,
         ILogger<BigQueryService> logger,
         ICacheService cache,
         IOptions<BigQueryConfig> config)
     {
-        _bigQueryClient = bigQueryClient;
+        _bigQueryClientService = bigQueryClientService;
         _logger = logger;
         _cache = cache;
         _config = config.Value;
+    }
+
+    private BigQueryClient? GetBigQueryClient()
+    {
+        if (!_bigQueryClientService.IsAvailable)
+        {
+            _logger.LogWarning("BigQuery client not available: {StatusMessage}", _bigQueryClientService.StatusMessage);
+            return null;
+        }
+        return _bigQueryClientService.GetClient();
     }
 
     public async Task<List<OnboardingEvent>> GetEventsAsync(DateTime startDate, DateTime endDate, FilterCriteria? filters = null)
@@ -39,10 +49,17 @@ public class BigQueryService : IBigQueryService
 
         _logger.LogInformation("Fetching events from BigQuery for date range: {StartDate} to {EndDate}", startDate, endDate);
         
+        var client = GetBigQueryClient();
+        if (client == null)
+        {
+            _logger.LogError("Cannot execute query - BigQuery client not available");
+            return new List<OnboardingEvent>();
+        }
+
         try
         {
             var query = BigQueryQueryBuilder.BuildEventsQuery(_config, startDate, endDate, filters);
-            var queryJob = await _bigQueryClient.CreateQueryJobAsync(query, null);
+            var queryJob = await client.CreateQueryJobAsync(query, null);
             var results = await queryJob.GetQueryResultsAsync();
             
             var events = new List<OnboardingEvent>();
@@ -80,10 +97,17 @@ public class BigQueryService : IBigQueryService
 
         _logger.LogInformation("Fetching user sessions from BigQuery for date range: {StartDate} to {EndDate}", startDate, endDate);
         
+        var client = GetBigQueryClient();
+        if (client == null)
+        {
+            _logger.LogError("Cannot execute query - BigQuery client not available");
+            return new List<UserSession>();
+        }
+
         try
         {
             var query = BigQueryQueryBuilder.BuildUserSessionsQuery(_config, startDate, endDate, filters);
-            var queryJob = await _bigQueryClient.CreateQueryJobAsync(query, null);
+            var queryJob = await client.CreateQueryJobAsync(query, null);
             var results = await queryJob.GetQueryResultsAsync();
             
             var sessions = new List<UserSession>();
@@ -156,10 +180,17 @@ public class BigQueryService : IBigQueryService
 
         _logger.LogInformation("Analyzing screen flow from BigQuery for date range: {StartDate} to {EndDate}", startDate, endDate);
         
+        var client = GetBigQueryClient();
+        if (client == null)
+        {
+            _logger.LogError("Cannot execute query - BigQuery client not available");
+            return new ScreenFlowAnalysis();
+        }
+
         try
         {
             var query = BigQueryQueryBuilder.BuildScreenFlowQuery(_config, startDate, endDate, filters);
-            var queryJob = await _bigQueryClient.CreateQueryJobAsync(query, null);
+            var queryJob = await client.CreateQueryJobAsync(query, null);
             var results = await queryJob.GetQueryResultsAsync();
             
             var connections = new List<FlowConnection>();
@@ -300,9 +331,16 @@ public class BigQueryService : IBigQueryService
 
     public async Task<bool> TestConnectionAsync()
     {
+        var client = GetBigQueryClient();
+        if (client == null)
+        {
+            _logger.LogWarning("BigQuery client not available for connection test");
+            return false;
+        }
+
         try
         {
-            var datasetsEnum = _bigQueryClient.ListDatasetsAsync(_config.ProjectId);
+            var datasetsEnum = client.ListDatasetsAsync(_config.ProjectId);
             var datasets = new List<BigQueryDataset>();
             await foreach (var dataset in datasetsEnum)
             {

@@ -5,7 +5,7 @@ namespace HealthcareAnalyticsWeb.Extensions;
 
 public static class BigQueryExtensions
 {
-    public static T SafeGetValue<T>(this BigQueryRow row, string fieldName, T defaultValue = default(T))
+    public static T SafeGetValue<T>(this BigQueryRow row, string fieldName, T? defaultValue = default(T))
     {
         try
         {
