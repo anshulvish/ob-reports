@@ -43,7 +43,12 @@ public class TestBigQueryController : ControllerBase
         try
         {
             // Test if we can list datasets
-            var datasets = await _bigQueryClient.ListDatasetsAsync(_config.ProjectId).ToListAsync();
+            var datasetsEnum = _bigQueryClient.ListDatasetsAsync(_config.ProjectId);
+            var datasets = new List<BigQueryDataset>();
+            await foreach (var dataset in datasetsEnum)
+            {
+                datasets.Add(dataset);
+            }
             
             return Ok(new
             {

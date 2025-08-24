@@ -34,15 +34,15 @@ public static class ServiceExtensions
         // Caching
         services.AddMemoryCache();
         
-        // Services (interfaces will be created in next steps)
-        // services.AddScoped<IBigQueryService, BigQueryService>();
-        // services.AddScoped<IEngagementService, EngagementService>();
-        // services.AddScoped<IUserJourneyService, UserJourneyService>();
-        // services.AddScoped<IScreenFlowService, ScreenFlowService>();
-        // services.AddScoped<ICacheService, CacheService>();
+        // Services
+        services.AddScoped<IBigQueryService, BigQueryService>();
+        services.AddScoped<IEngagementService, EngagementService>();
+        services.AddScoped<IUserJourneyService, UserJourneyService>();
+        services.AddScoped<IScreenFlowService, ScreenFlowService>();
+        services.AddSingleton<ICacheService, CacheService>();
 
-        // AutoMapper (will configure profiles later)
-        // services.AddAutoMapper(typeof(Program));
+        // AutoMapper
+        services.AddAutoMapper(typeof(Program).Assembly);
 
         return services;
     }
