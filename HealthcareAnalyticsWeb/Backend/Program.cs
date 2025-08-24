@@ -51,7 +51,7 @@ app.MapControllers();
 
 try
 {
-    Log.Information("Starting Healthcare Analytics Web Application");
+    Log.Information("Starting Aya Healthcare Analytics Web Application");
     app.Run();
 }
 catch (Exception ex)

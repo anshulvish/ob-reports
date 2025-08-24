@@ -12,7 +12,7 @@ public class HealthController : ControllerBase
         return Ok(new
         {
             Status = "Healthy",
-            Service = "Healthcare Analytics API",
+            Service = "Aya Healthcare Analytics API",
             Version = "1.0.0",
             Timestamp = DateTime.UtcNow,
             Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"
