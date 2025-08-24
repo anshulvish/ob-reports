@@ -1,0 +1,1390 @@
+# Healthcare Onboarding Analytics Web Application - Final Implementation Specification
+
+## 1. Project Overview
+
+### Purpose
+Build a modern web application that connects directly to Google BigQuery to analyze healthcare platform onboarding data. The application focuses on **user engagement analysis** rather than traditional funnel conversion, providing interactive dashboards, individual user journey tracking, and real-time analytics for multiple user types (analysts, PMs, stakeholders).
+
+### Key Features
+- **Real-time BigQuery Integration**: Direct connection to Google Analytics events table
+- **Engagement-Focused Analytics**: Track user investment, furthest progress, and re-engagement patterns
+- **Individual User Journey Visualization**: Search by email/userId to see complete user path
+- **Auto-detected Screen Flow**: Dynamically discovers actual user paths from data
+- **Interactive Dashboards**: Professional Chart.js visualizations with export capabilities
+- **Multi-user Access**: Web-based interface for team collaboration
+- **Global Timezone Support**: Local time analysis for worldwide healthcare workers
+
+### Core Requirements
+- **BigQuery Direct Connection**: Query Google Analytics events table in real-time
+- **Engagement Metrics**: Furthest point reached, time invested, screen revisits
+- **User Journey Tracking**: Individual user path visualization and debugging
+- **Auto-Discovery**: Detect actual screen flows from user behavior data
+- **Professional UI**: Executive-ready presentations and exports
+- **Performance**: Sub-5 second query response times with intelligent caching
+- **Future-Ready**: Architecture prepared for A/B testing features (to be added later)
+
+## 2. Technology Stack
+
+### Frontend (React TypeScript)
+```json
+{
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    
+    "chart.js": "^4.4.0",
+    "react-chartjs-2": "^5.2.0",
+    "chartjs-adapter-date-fns": "^3.0.0",
+    "react-flow-renderer": "^10.3.17",
+    
+    "@mui/material": "^5.14.0",
+    "@mui/icons-material": "^5.14.0",
+    "@mui/x-date-pickers": "^6.16.0",
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    
+    "react-router-dom": "^6.15.0",
+    "react-query": "^3.39.0",
+    "axios": "^1.5.0",
+    "date-fns": "^2.30.0",
+    "date-fns-tz": "^2.0.0",
+    
+    "react-grid-layout": "^1.4.0",
+    "react-beautiful-dnd": "^13.1.0",
+    "react-hook-form": "^7.45.0",
+    "yup": "^1.3.0",
+    
+    "jspdf": "^2.5.1",
+    "html2canvas": "^1.4.1",
+    "xlsx": "^0.18.5",
+    "lodash": "^4.17.21",
+    "recharts": "^2.8.0"
+  }
+}
+```
+
+### Backend (.NET 8 API)
+```xml
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Google Cloud -->
+    <PackageReference Include="Google.Cloud.BigQuery.V2" Version="3.4.0" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.62.0" />
+    <PackageReference Include="Google.Apis.BigQueryService.v2" Version="1.62.0.3085" />
+    
+    <!-- Web API -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" />
+    
+    <!-- Data & Caching -->
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="MoreLinq" Version="3.4.2" />
+    
+    <!-- Authentication -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.0" />
+    
+    <!-- Utilities -->
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
+    <PackageReference Include="AutoMapper" Version="12.0.1" />
+    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
+    <PackageReference Include="CsvHelper" Version="30.0.1" />
+  </ItemGroup>
+</Project>
+```
+
+## 3. Project Structure
+
+```
+HealthcareAnalyticsWeb/
+├── Frontend/                           # React application
+│   ├── src/
+│   │   ├── components/                 # Reusable UI components
+│   │   │   ├── common/
+│   │   │   │   ├── Layout.tsx
+│   │   │   │   ├── Sidebar.tsx
+│   │   │   │   ├── Header.tsx
+│   │   │   │   ├── LoadingSpinner.tsx
+│   │   │   │   └── SearchBar.tsx
+│   │   │   ├── charts/
+│   │   │   │   ├── ChartContainer.tsx
+│   │   │   │   ├── EngagementChart.tsx
+│   │   │   │   ├── DeviceChart.tsx
+│   │   │   │   ├── TimeSeriesChart.tsx
+│   │   │   │   ├── UserJourneyFlow.tsx
+│   │   │   │   └── ChartExporter.tsx
+│   │   │   ├── dashboard/
+│   │   │   │   ├── DashboardBuilder.tsx
+│   │   │   │   ├── EngagementMetrics.tsx
+│   │   │   │   ├── FilterPanel.tsx
+│   │   │   │   ├── MetricCard.tsx
+│   │   │   │   └── UserSearch.tsx
+│   │   │   └── journey/
+│   │   │       ├── UserJourneyViewer.tsx
+│   │   │       ├── JourneyTimeline.tsx
+│   │   │       └── ScreenFlowDiagram.tsx
+│   │   ├── pages/
+│   │   │   ├── Dashboard.tsx
+│   │   │   ├── EngagementAnalysis.tsx
+│   │   │   ├── UserJourney.tsx
+│   │   │   ├── ScreenFlowAnalysis.tsx
+│   │   │   └── Settings.tsx
+│   │   ├── hooks/
+│   │   │   ├── useBigQuery.ts
+│   │   │   ├── useEngagementData.ts
+│   │   │   ├── useUserJourney.ts
+│   │   │   └── useScreenFlow.ts
+│   │   ├── services/
+│   │   │   ├── api.ts
+│   │   │   ├── bigqueryService.ts
+│   │   │   ├── engagementService.ts
+│   │   │   └── journeyService.ts
+│   │   ├── types/
+│   │   │   ├── bigquery.ts
+│   │   │   ├── engagement.ts
+│   │   │   ├── journey.ts
+│   │   │   └── charts.ts
+│   │   └── utils/
+│   │       ├── chartConfig.ts
+│   │       ├── dateHelpers.ts
+│   │       ├── timezoneHelpers.ts
+│   │       └── engagementCalculators.ts
+│   ├── public/
+│   └── package.json
+├── Backend/                            # .NET API
+│   ├── Controllers/
+│   │   ├── BigQueryController.cs
+│   │   ├── EngagementController.cs
+│   │   ├── UserJourneyController.cs
+│   │   ├── ScreenFlowController.cs
+│   │   └── ExportController.cs
+│   ├── Services/
+│   │   ├── Interfaces/
+│   │   │   ├── IBigQueryService.cs
+│   │   │   ├── IEngagementService.cs
+│   │   │   ├── IUserJourneyService.cs
+│   │   │   ├── IScreenFlowService.cs
+│   │   │   └── ICacheService.cs
+│   │   ├── BigQueryService.cs
+│   │   ├── EngagementService.cs
+│   │   ├── UserJourneyService.cs
+│   │   ├── ScreenFlowService.cs
+│   │   └── CacheService.cs
+│   ├── Models/
+│   │   ├── BigQuery/
+│   │   │   ├── OnboardingEvent.cs
+│   │   │   ├── UserSession.cs
+│   │   │   ├── UserJourney.cs
+│   │   │   └── ScreenFlow.cs
+│   │   ├── Analytics/
+│   │   │   ├── EngagementMetrics.cs
+│   │   │   ├── EngagementLevel.cs
+│   │   │   ├── JourneyStep.cs
+│   │   │   └── FlowAnalysis.cs
+│   │   └── DTOs/
+│   │       ├── EngagementDto.cs
+│   │       ├── UserJourneyDto.cs
+│   │       ├── ScreenFlowDto.cs
+│   │       └── AnalysisRequestDto.cs
+│   ├── Configuration/
+│   │   ├── BigQueryConfig.cs
+│   │   ├── CacheConfig.cs
+│   │   └── EngagementConfig.cs
+│   ├── Extensions/
+│   │   ├── ServiceExtensions.cs
+│   │   ├── BigQueryExtensions.cs
+│   │   └── DateTimeExtensions.cs
+│   └── Program.cs
+├── Shared/
+│   ├── Constants/
+│   │   ├── EventNames.cs
+│   │   ├── ScreenNames.cs
+│   │   ├── EngagementLevels.cs
+│   │   └── ChartTypes.cs
+│   └── Utilities/
+│       ├── QueryBuilder.cs
+│       ├── EngagementCalculator.cs
+│       └── TimezoneConverter.cs
+└── Documentation/
+    ├── BigQuery-Schema.md
+    ├── Engagement-Metrics.md
+    └── User-Journey-Analysis.md
+```
+
+## 4. Core Data Models
+
+### OnboardingEvent.cs (Mapped from BigQuery)
+```csharp
+namespace HealthcareAnalyticsWeb.Models.BigQuery;
+
+public class OnboardingEvent
+{
+    // Primary timestamps - FINAL DECISION
+    public DateTime EventTimestamp { get; set; }        // UTC - for sequencing, duration calculations
+    public DateTime LocalTimestamp { get; set; }        // User timezone - for activity pattern analysis
+    
+    public string EventName { get; set; } = string.Empty;
+    
+    // Core tracking fields
+    public string SessionId { get; set; } = string.Empty;
+    public string UserId { get; set; } = string.Empty;
+    public string UserEmail { get; set; } = string.Empty;
+    public string EventId { get; set; } = string.Empty;
+    public string SchemaVersion { get; set; } = string.Empty;
+    public string AppVersion { get; set; } = string.Empty;
+    public string AppName { get; set; } = string.Empty;
+    
+    // Screen/navigation
+    public string ScreenName { get; set; } = string.Empty;
+    
+    // Timing fields
+    public string TimeSpent { get; set; } = string.Empty;
+    public string StartTime { get; set; } = string.Empty;
+    public string EndTime { get; set; } = string.Empty;
+    public string TotalTimeSpent { get; set; } = string.Empty;
+    public string SessionStartTime { get; set; } = string.Empty;
+    
+    // API tracking
+    public string Endpoint { get; set; } = string.Empty;
+    public string Method { get; set; } = string.Empty;
+    public string StatusCode { get; set; } = string.Empty;
+    public string Error { get; set; } = string.Empty;
+    
+    // Exit tracking
+    public string ExitLocation { get; set; } = string.Empty;
+    public string CurrentStep { get; set; } = string.Empty;
+    
+    // Large data fields (reconstructed from chunks)
+    public string ResponseData { get; set; } = string.Empty;
+    public string DeviceInfo { get; set; } = string.Empty;
+    public string JobPreferences { get; set; } = string.Empty;
+    
+    // Geographic data
+    public string Country { get; set; } = string.Empty;
+    public string Region { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    
+    // Feature flags (gracefully handle missing - TO BE ADDED LATER)
+    public Dictionary<string, string> FeatureFlags { get; set; } = new();
+    public bool HasFeatureFlagData => FeatureFlags.Any();
+    
+    // Computed properties
+    public bool IsValidEvent => !IsTestUser && IsValidSchema;
+    public bool IsTestUser => UserId?.ToLower().Contains("test") == true || 
+                             UserId?.ToLower().Contains("qa") == true || 
+                             UserEmail?.ToLower().Contains("test") == true;
+    public bool IsValidSchema => SchemaVersion == "1.1";
+    
+    public DeviceType GetDeviceType()
+    {
+        if (string.IsNullOrEmpty(DeviceInfo)) return DeviceType.Unknown;
+        var deviceLower = DeviceInfo.ToLower();
+        
+        if (deviceLower.Contains("mobile") || deviceLower.Contains("android") || deviceLower.Contains("ios"))
+            return DeviceType.Mobile;
+        if (deviceLower.Contains("tablet") || deviceLower.Contains("ipad"))
+            return DeviceType.Tablet;
+        if (deviceLower.Contains("desktop") || deviceLower.Contains("windows") || deviceLower.Contains("mac"))
+            return DeviceType.Desktop;
+            
+        return DeviceType.Unknown;
+    }
+    
+    // Helper for time zone analysis
+    public int GetLocalHourOfDay() => LocalTimestamp.Hour;
+    public DayOfWeek GetLocalDayOfWeek() => LocalTimestamp.DayOfWeek;
+}
+
+public enum DeviceType
+{
+    Unknown,
+    Mobile,
+    Desktop,
+    Tablet
+}
+```
+
+### UserSession.cs (Engagement-Focused)
+```csharp
+namespace HealthcareAnalyticsWeb.Models.BigQuery;
+
+public class UserSession
+{
+    public string SessionId { get; set; } = string.Empty;
+    public string UserId { get; set; } = string.Empty;
+    public string UserEmail { get; set; } = string.Empty;
+    public DateTime StartTime { get; set; }     // UTC
+    public DateTime EndTime { get; set; }       // UTC
+    public TimeSpan Duration => EndTime - StartTime;
+    
+    public List<OnboardingEvent> Events { get; set; } = new();
+    public List<string> ScreensViewed { get; set; } = new();
+    public Dictionary<string, int> ScreenVisitCounts { get; set; } = new();
+    
+    public DeviceType DeviceType { get; set; }
+    public string Country { get; set; } = string.Empty;
+    public string Region { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    
+    // ENGAGEMENT METRICS - FINAL DECISION
+    public int FurthestStageReached => CalculateFurthestStage();
+    public bool Completed => ScreensViewed.Contains("outro");
+    public string ExitPoint => !Completed ? (ScreensViewed.LastOrDefault() ?? "unknown") : "completed";
+    public TimeSpan TimeInvested => Duration; // Total time user spent
+    public int TotalScreenRevisits => ScreenVisitCounts.Values.Sum() - ScreensViewed.Count; // How many times they went back
+    public EngagementLevel EngagementLevel => CalculateEngagementLevel();
+    
+    // Activity patterns in user's local timezone
+    public List<int> LocalActivityHours => Events
+        .Select(e => e.GetLocalHourOfDay())
+        .Distinct()
+        .OrderBy(h => h)
+        .ToList();
+    
+    // Screen flow analysis
+    public List<ScreenTransition> ScreenFlow => CalculateScreenFlow();
+    public bool HasNonLinearFlow => ScreenFlow.Any(t => t.IsBackward);
+    
+    private int CalculateFurthestStage()
+    {
+        var stageOrder = new Dictionary<string, int>
+        {
+            ["welcome"] = 1,
+            ["dy-quiz/1"] = 2,
+            ["dy-quiz/2"] = 3,
+            ["step/1"] = 4,
+            ["step/2"] = 5,
+            ["step/3"] = 6,
+            ["job-suggestions/1"] = 7,
+            ["job-suggestions/2"] = 8,
+            ["outro"] = 9
+        };
+        
+        return ScreensViewed
+            .Where(screen => stageOrder.ContainsKey(screen))
+            .Select(screen => stageOrder[screen])
+            .DefaultIfEmpty(0)
+            .Max();
+    }
+    
+    private EngagementLevel CalculateEngagementLevel()
+    {
+        // ENGAGEMENT SCORING ALGORITHM
+        var score = 0;
+        
+        // Stage progress (0-50 points)
+        score += FurthestStageReached * 5;
+        
+        // Time invested (0-30 points)
+        var minutes = Duration.TotalMinutes;
+        score += Math.Min((int)(minutes / 2), 30); // 2 minutes = 1 point, max 30
+        
+        // Revisits show engagement (0-20 points)
+        score += Math.Min(TotalScreenRevisits * 3, 20); // 3 points per revisit, max 20
+        
+        // Completion bonus (20 points)
+        if (Completed) score += 20;
+        
+        return score switch
+        {
+            >= 80 => EngagementLevel.HighlyEngaged,
+            >= 50 => EngagementLevel.ModeratelyEngaged,
+            >= 20 => EngagementLevel.LightlyEngaged,
+            _ => EngagementLevel.MinimalEngagement
+        };
+    }
+    
+    private List<ScreenTransition> CalculateScreenFlow()
+    {
+        var transitions = new List<ScreenTransition>();
+        var screenEvents = Events
+            .Where(e => e.EventName == "aifp_screen_view")
+            .OrderBy(e => e.EventTimestamp)
+            .ToList();
+            
+        for (int i = 1; i < screenEvents.Count; i++)
+        {
+            var from = screenEvents[i - 1];
+            var to = screenEvents[i];
+            
+            transitions.Add(new ScreenTransition
+            {
+                From = from.ScreenName,
+                To = to.ScreenName,
+                Timestamp = to.EventTimestamp,
+                Duration = to.EventTimestamp - from.EventTimestamp,
+                IsBackward = IsBackwardTransition(from.ScreenName, to.ScreenName)
+            });
+        }
+        
+        return transitions;
+    }
+    
+    private bool IsBackwardTransition(string from, string to)
+    {
+        var stageOrder = new Dictionary<string, int>
+        {
+            ["welcome"] = 1, ["dy-quiz/1"] = 2, ["dy-quiz/2"] = 3,
+            ["step/1"] = 4, ["step/2"] = 5, ["step/3"] = 6,
+            ["job-suggestions/1"] = 7, ["job-suggestions/2"] = 8, ["outro"] = 9
+        };
+        
+        var fromStage = stageOrder.GetValueOrDefault(from, 0);
+        var toStage = stageOrder.GetValueOrDefault(to, 0);
+        
+        return fromStage > toStage;
+    }
+}
+
+public class ScreenTransition
+{
+    public string From { get; set; } = string.Empty;
+    public string To { get; set; } = string.Empty;
+    public DateTime Timestamp { get; set; }
+    public TimeSpan Duration { get; set; }
+    public bool IsBackward { get; set; }
+}
+
+public enum EngagementLevel
+{
+    MinimalEngagement,    // 0-19 points: Bounced early, minimal time
+    LightlyEngaged,       // 20-49 points: Some progress, moderate time
+    ModeratelyEngaged,    // 50-79 points: Good progress, revisits
+    HighlyEngaged         // 80+ points: Deep engagement, completion or near-completion
+}
+```
+
+### UserJourney.cs (Individual User Path Visualization)
+```csharp
+namespace HealthcareAnalyticsWeb.Models.BigQuery;
+
+public class UserJourney
+{
+    public string UserId { get; set; } = string.Empty;
+    public string UserEmail { get; set; } = string.Empty;
+    public List<UserSession> Sessions { get; set; } = new();
+    public DateTime FirstVisit { get; set; }
+    public DateTime LastActivity { get; set; }
+    public TimeSpan TotalTimeInvested { get; set; }
+    public int TotalSessions { get; set; }
+    public bool EverCompleted { get; set; }
+    public EngagementLevel OverallEngagement { get; set; }
+    
+    // Journey visualization data
+    public List<JourneyStep> Steps { get; set; } = new();
+    public List<ScreenTransition> AllTransitions { get; set; } = new();
+    
+    // Insights
+    public string DropOffPoint { get; set; } = string.Empty;
+    public List<string> ProblematicScreens { get; set; } = new(); // Screens where user got stuck
+    public List<string> RevisitedScreens { get; set; } = new(); // Screens they went back to
+}
+
+public class JourneyStep
+{
+    public string ScreenName { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public DateTime FirstVisit { get; set; }
+    public DateTime LastVisit { get; set; }
+    public int VisitCount { get; set; }
+    public TimeSpan TotalTimeSpent { get; set; }
+    public string SessionId { get; set; } = string.Empty;
+    public bool IsDropOffPoint { get; set; }
+}
+```
+
+## 5. Service Interfaces
+
+### IEngagementService.cs
+```csharp
+namespace HealthcareAnalyticsWeb.Services.Interfaces;
+
+public interface IEngagementService
+{
+    Task<EngagementAnalysisResult> GetEngagementAnalysisAsync(DateTime startDate, DateTime endDate, FilterCriteria? filters = null);
+    Task<EngagementBreakdownResult> GetEngagementBreakdownAsync(DateTime startDate, DateTime endDate, FilterCriteria? filters = null);
+    Task<ScreenEngagementResult> GetScreenEngagementAsync(DateTime startDate, DateTime endDate, FilterCriteria? filters = null);
+    Task<TimeInvestmentResult> GetTimeInvestmentAnalysisAsync(DateTime startDate, DateTime endDate, FilterCriteria? filters = null);
+}
+
+public class EngagementAnalysisResult
+{
+    public int TotalUsers { get; set; }
+    public int TotalSessions { get; set; }
+    public double CompletionRate { get; set; }
+    public double AverageEngagementScore { get; set; }
+    public Dictionary<EngagementLevel, int> EngagementBreakdown { get; set; } = new();
+    public Dictionary<int, int> FurthestStageReached { get; set; } = new(); // Stage -> Count
+    public TimeSpan AverageTimeInvested { get; set; }
+    public double AverageScreenRevisits { get; set; }
+}
+```
+
+### IUserJourneyService.cs
+```csharp
+namespace HealthcareAnalyticsWeb.Services.Interfaces;
+
+public interface IUserJourneyService
+{
+    Task<UserJourney> GetUserJourneyAsync(string userIdentifier); // Email or UserId
+    Task<List<UserJourney>> SearchUserJourneysAsync(string searchTerm, int limit = 50);
+    Task<ScreenFlowAnalysis> GetScreenFlowAnalysisAsync(DateTime startDate, DateTime endDate, FilterCriteria? filters = null);
+    Task<List<CommonPath>> GetCommonPathsAsync(DateTime startDate, DateTime endDate, int minOccurrences = 10);
+}
+
+public class ScreenFlowAnalysis
+{
+    public List<ScreenNode> Screens { get; set; } = new();
+    public List<FlowConnection> Connections { get; set; } = new();
+    public Dictionary<string, int> DropOffPoints { get; set; } = new();
+    public List<string> MostCommonPaths { get; set; } = new();
+    public Dictionary<string, double> ScreenRetentionRates { get; set; } = new();
+}
+
+public class ScreenNode
+{
+    public string ScreenName { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public int VisitCount { get; set; }
+    public int UniqueUsers { get; set; }
+    public TimeSpan AverageTimeSpent { get; set; }
+    public double DropOffRate { get; set; }
+}
+
+public class FlowConnection
+{
+    public string From { get; set; } = string.Empty;
+    public string To { get; set; } = string.Empty;
+    public int Count { get; set; }
+    public double Percentage { get; set; }
+    public bool IsBackward { get; set; }
+}
+```
+
+## 6. BigQuery Service Implementation
+
+### BigQueryService.cs (Key Methods)
+```csharp
+namespace HealthcareAnalyticsWeb.Services;
+
+public class BigQueryService : IBigQueryService
+{
+    private readonly BigQueryClient _bigQueryClient;
+    private readonly ILogger<BigQueryService> _logger;
+    private readonly ICacheService _cache;
+    private readonly BigQueryConfig _config;
+    
+    public async Task<List<OnboardingEvent>> GetEventsAsync(DateTime startDate, DateTime endDate, FilterCriteria? filters = null)
+    {
+        var cacheKey = GenerateCacheKey("events", startDate, endDate, filters);
+        var cachedResult = await _cache.GetAsync<List<OnboardingEvent>>(cacheKey);
+        if (cachedResult != null) return cachedResult;
+        
+        var query = BuildEventsQuery(startDate, endDate, filters);
+        var queryJob = await _bigQueryClient.CreateQueryJobAsync(query, null);
+        var results = await queryJob.GetQueryResultsAsync();
+        
+        var events = new List<OnboardingEvent>();
+        await foreach (var row in results)
+        {
+            events.Add(MapRowToEvent(row));
+        }
+        
+        // Cache for 15 minutes
+        await _cache.SetAsync(cacheKey, events, TimeSpan.FromMinutes(15));
+        return events;
+    }
+    
+    public async Task<ScreenFlowAnalysis> GetScreenFlowAnalysisAsync(DateTime startDate, DateTime endDate, FilterCriteria? filters = null)
+    {
+        // AUTO-DETECT SCREEN FLOW FROM DATA - FINAL DECISION
+        var query = BuildScreenFlowQuery(startDate, endDate, filters);
+        var queryJob = await _bigQueryClient.CreateQueryJobAsync(query, null);
+        var results = await queryJob.GetQueryResultsAsync();
+        
+        var connections = new List<FlowConnection>();
+        var screenCounts = new Dictionary<string, int>();
+        
+        await foreach (var row in results)
+        {
+            var from = row["from_screen"]?.ToString() ?? "";
+            var to = row["to_screen"]?.ToString() ?? "";
+            var count = Convert.ToInt32(row["transition_count"]);
+            var isBackward = Convert.ToBoolean(row["is_backward"]);
+            
+            connections.Add(new FlowConnection
+            {
+                From = from,
+                To = to,
+                Count = count,
+                IsBackward = isBackward
+            });
+            
+            screenCounts[from] = screenCounts.GetValueOrDefault(from, 0) + count;
+        }
+        
+        // Calculate percentages and build screen nodes
+        var totalTransitions = connections.Sum(c => c.Count);
+        foreach (var connection in connections)
+        {
+            connection.Percentage = (double)connection.Count / totalTransitions * 100;
+        }
+        
+        return new ScreenFlowAnalysis
+        {
+            Connections = connections,
+            Screens = BuildScreenNodes(screenCounts),
+            DropOffPoints = await GetDropOffPointsAsync(startDate, endDate, filters),
+            MostCommonPaths = await GetCommonPathsAsync(startDate, endDate, 10).Select(p => p.Path).ToList()
+        };
+    }
+    
+    private string BuildEventsQuery(DateTime startDate, DateTime endDate, FilterCriteria? filters)
+    {
+        // Use the provided BigQuery query as foundation, enhanced for timezone handling
+        var baseQuery = $@"
+            WITH
+                raw_events AS (
+                    SELECT *
+                    FROM `{_config.ProjectId}.{_config.DatasetId}.events_*`
+                    WHERE _TABLE_SUFFIX BETWEEN @start_date AND @end_date
+                    UNION ALL
+                    SELECT *
+                    FROM `{_config.ProjectId}.{_config.DatasetId}.events_intraday_*`
+                    WHERE _TABLE_SUFFIX = FORMAT_DATE('%Y%m%d', CURRENT_DATE())
+                ),
+                flattened_params AS (
+                    SELECT
+                        TIMESTAMP_MICROS(e.event_timestamp) AS event_timestamp,
+                        -- Parse localTimestamp for timezone analysis
+                        CASE 
+                            WHEN (SELECT p.value.string_value FROM UNNEST(e.event_params) AS p WHERE p.key = 'localTimestamp') IS NOT NULL 
+                            THEN TIMESTAMP((SELECT p.value.string_value FROM UNNEST(e.event_params) AS p WHERE p.key = 'localTimestamp'))
+                            ELSE TIMESTAMP_MICROS(e.event_timestamp)
+                        END AS local_timestamp,
+                        e.event_name,
+                        -- All your existing parameter extractions here...
+                        (SELECT COALESCE(p.value.string_value, CAST(p.value.int_value AS STRING)) FROM UNNEST(e.event_params) AS p WHERE p.key = 'sessionId') AS sessionId,
+                        (SELECT COALESCE(p.value.string_value, CAST(p.value.int_value AS STRING)) FROM UNNEST(e.event_params) AS p WHERE p.key = 'userId') AS userId,
+                        (SELECT COALESCE(p.value.string_value, CAST(p.value.int_value AS STRING)) FROM UNNEST(e.event_params) AS p WHERE p.key = 'userEmail') AS userEmail,
+                        (SELECT COALESCE(p.value.string_value, CAST(p.value.int_value AS STRING)) FROM UNNEST(e.event_params) AS p WHERE p.key = 'screenName') AS screenName,
+                        (SELECT COALESCE(p.value.string_value, CAST(p.value.int_value AS STRING)) FROM UNNEST(e.event_params) AS p WHERE p.key = 'schemaVersion') AS schemaVersion,
+                        -- Geographic data
+                        e.geo.country,
+                        e.geo.region,
+                        e.geo.city,
+                        -- Device info reconstruction
+                        (SELECT STRING_AGG(COALESCE(p.value.string_value, CAST(p.value.int_value AS STRING)), '' ORDER BY CAST(REGEXP_EXTRACT(p.key, r'deviceInfo_(\d+)') AS INT64)) FROM UNNEST(e.event_params) AS p WHERE STARTS_WITH(p.key, 'deviceInfo_')) AS deviceInfo
+                    FROM raw_events AS e
+                    WHERE e.event_name IN ('aifp_screen_view', 'aifp_exit_onboarding', 'aifp_complete_onboarding')
+                )
+            SELECT *
+            FROM flattened_params
+            WHERE 1=1";
+            
+        // Apply filters
+        if (filters?.ExcludeTestUsers == true)
+        {
+            baseQuery += @"
+                AND NOT (LOWER(COALESCE(userId, '')) LIKE '%test%' 
+                        OR LOWER(COALESCE(userId, '')) LIKE '%qa%' 
+                        OR LOWER(COALESCE(userEmail, '')) LIKE '%test%')";
+        }
+        
+        if (filters?.SchemaVersion != null)
+        {
+            baseQuery += $" AND schemaVersion = '{filters.SchemaVersion}'";
+        }
+        
+        baseQuery += " ORDER BY event_timestamp DESC";
+        return baseQuery;
+    }
+    
+    private string BuildScreenFlowQuery(DateTime startDate, DateTime endDate, FilterCriteria? filters)
+    {
+        return $@"
+            WITH user_sessions AS (
+                SELECT 
+                    sessionId,
+                    userId,
+                    ARRAY_AGG(
+                        STRUCT(screenName, event_timestamp) 
+                        ORDER BY event_timestamp
+                    ) as screen_sequence
+                FROM (
+                    {BuildEventsQuery(startDate, endDate, filters).Replace("SELECT *", "SELECT sessionId, userId, screenName, event_timestamp")}
+                )
+                WHERE event_name = 'aifp_screen_view'
+                  AND screenName IS NOT NULL 
+                  AND screenName != ''
+                GROUP BY sessionId, userId
+                HAVING COUNT(*) > 1  -- Only sessions with multiple screens
+            ),
+            screen_transitions AS (
+                SELECT 
+                    sessionId,
+                    userId,
+                    LAG(screen.screenName) OVER (PARTITION BY sessionId ORDER BY screen.event_timestamp) as from_screen,
+                    screen.screenName as to_screen,
+                    screen.event_timestamp
+                FROM user_sessions,
+                UNNEST(screen_sequence) as screen
+            ),
+            transition_analysis AS (
+                SELECT 
+                    from_screen,
+                    to_screen,
+                    COUNT(*) as transition_count,
+                    -- Detect backward transitions using predefined stage order
+                    CASE 
+                        WHEN from_screen = 'dy-quiz/1' AND to_screen = 'welcome' THEN true
+                        WHEN from_screen = 'dy-quiz/2' AND to_screen IN ('welcome', 'dy-quiz/1') THEN true  
+                        WHEN from_screen = 'step/1' AND to_screen IN ('welcome', 'dy-quiz/1', 'dy-quiz/2') THEN true
+                        WHEN from_screen = 'step/2' AND to_screen IN ('welcome', 'dy-quiz/1', 'dy-quiz/2', 'step/1') THEN true
+                        WHEN from_screen = 'step/3' AND to_screen IN ('welcome', 'dy-quiz/1', 'dy-quiz/2', 'step/1', 'step/2') THEN true
+                        WHEN from_screen = 'job-suggestions/1' AND to_screen IN ('welcome', 'dy-quiz/1', 'dy-quiz/2', 'step/1', 'step/2', 'step/3') THEN true
+                        WHEN from_screen = 'job-suggestions/2' AND to_screen IN ('welcome', 'dy-quiz/1', 'dy-quiz/2', 'step/1', 'step/2', 'step/3', 'job-suggestions/1') THEN true
+                        WHEN from_screen = 'outro' AND to_screen != 'outro' THEN true
+                        ELSE false
+                    END as is_backward
+                FROM screen_transitions
+                WHERE from_screen IS NOT NULL
+                GROUP BY from_screen, to_screen
+            )
+            SELECT 
+                from_screen,
+                to_screen,
+                transition_count,
+                is_backward,
+                ROUND(100.0 * transition_count / SUM(transition_count) OVER (), 2) as percentage
+            FROM transition_analysis
+            ORDER BY transition_count DESC";
+    }
+    
+    private OnboardingEvent MapRowToEvent(BigQueryRow row)
+    {
+        return new OnboardingEvent
+        {
+            EventTimestamp = row["event_timestamp"].SafeGetValue<DateTime>(),
+            LocalTimestamp = row["local_timestamp"].SafeGetValue<DateTime>(),
+            EventName = row["event_name"]?.ToString() ?? "",
+            SessionId = row["sessionId"]?.ToString() ?? "",
+            UserId = row["userId"]?.ToString() ?? "",
+            UserEmail = row["userEmail"]?.ToString() ?? "",
+            ScreenName = row["screenName"]?.ToString() ?? "",
+            SchemaVersion = row["schemaVersion"]?.ToString() ?? "",
+            DeviceInfo = row["deviceInfo"]?.ToString() ?? "",
+            Country = row["country"]?.ToString() ?? "",
+            Region = row["region"]?.ToString() ?? "",
+            City = row["city"]?.ToString() ?? "",
+            // Initialize empty feature flags - will be populated later when implemented
+            FeatureFlags = new Dictionary<string, string>()
+        };
+    }
+}
+```
+
+## 7. React Frontend Components
+
+### useEngagementData.ts (Engagement Analysis Hook)
+```typescript
+import { useQuery } from 'react-query';
+import { apiService } from '../services/api';
+import { AnalysisRequest, EngagementAnalysisResult } from '../types/engagement';
+
+export const useEngagementAnalysis = (request: AnalysisRequest) => {
+  return useQuery(
+    ['engagementAnalysis', request],
+    () => apiService.getEngagementAnalysis(request),
+    {
+      enabled: !!request.startDate && !!request.endDate,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 15 * 60 * 1000, // 15 minutes
+    }
+  );
+};
+
+export const useScreenFlow = (request: AnalysisRequest) => {
+  return useQuery(
+    ['screenFlow', request],
+    () => apiService.getScreenFlowAnalysis(request),
+    {
+      enabled: !!request.startDate && !!request.endDate,
+      staleTime: 10 * 60 * 1000, // 10 minutes - screen flow changes less frequently
+    }
+  );
+};
+```
+
+### useUserJourney.ts (Individual User Journey Hook)
+```typescript
+import { useState } from 'react';
+import { useQuery, useMutation } from 'react-query';
+import { apiService } from '../services/api';
+import { UserJourney } from '../types/journey';
+
+export const useUserJourneySearch = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const searchMutation = useMutation(
+    (term: string) => apiService.searchUserJourneys(term),
+    {
+      onSuccess: (data) => {
+        // Handle search results
+      }
+    }
+  );
+  
+  const getUserJourney = (userIdentifier: string) => {
+    return useQuery(
+      ['userJourney', userIdentifier],
+      () => apiService.getUserJourney(userIdentifier),
+      {
+        enabled: !!userIdentifier,
+        staleTime: 2 * 60 * 1000, // 2 minutes - user data should be relatively fresh
+      }
+    );
+  };
+  
+  return {
+    searchTerm,
+    setSearchTerm,
+    searchMutation,
+    getUserJourney,
+    isSearching: searchMutation.isLoading,
+    searchResults: searchMutation.data,
+  };
+};
+```
+
+### EngagementAnalysis.tsx (Main Engagement Page)
+```tsx
+import React, { useState } from 'react';
+import { Grid, Paper, Typography, Box, Chip, Card, CardContent } from '@mui/material';
+import { DateRangePicker } from '@mui/x-date-pickers-pro/DateRangePicker';
+import { subDays } from 'date-fns';
+import { useEngagementAnalysis, useScreenFlow } from '../hooks/useEngagementData';
+import { EngagementChart } from '../components/charts/EngagementChart';
+import { ScreenFlowDiagram } from '../components/charts/ScreenFlowDiagram';
+import { MetricCard } from '../components/dashboard/MetricCard';
+
+export const EngagementAnalysis: React.FC = () => {
+  const [dateRange, setDateRange] = useState([
+    subDays(new Date(), 30),
+    new Date()
+  ]);
+  
+  const [filters, setFilters] = useState({});
+  
+  const analysisRequest = {
+    startDate: dateRange[0],
+    endDate: dateRange[1],
+    filters
+  };
+  
+  const { data: engagementData, isLoading: engagementLoading } = useEngagementAnalysis(analysisRequest);
+  const { data: flowData, isLoading: flowLoading } = useScreenFlow(analysisRequest);
+  
+  const getEngagementColor = (level: string) => {
+    switch (level) {
+      case 'HighlyEngaged': return 'success';
+      case 'ModeratelyEngaged': return 'primary'; 
+      case 'LightlyEngaged': return 'warning';
+      case 'MinimalEngagement': return 'error';
+      default: return 'default';
+    }
+  };
+  
+  return (
+    <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Grid container spacing={3}>
+        {/* Header */}
+        <Grid item xs={12}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            🎯 Onboarding Engagement Analysis
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            Understanding how users invest time and effort in the onboarding process
+          </Typography>
+        </Grid>
+        
+        {/* Engagement Overview Metrics */}
+        <Grid item xs={12} sm={6} md={3}>
+          <MetricCard
+            title="Total Users"
+            value={engagementData?.totalUsers?.toLocaleString() ?? '—'}
+            loading={engagementLoading}
+            icon="👥"
+            color="primary"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <MetricCard
+            title="Completion Rate"
+            value={engagementData?.completionRate ? `${engagementData.completionRate.toFixed(1)}%` : '—'}
+            loading={engagementLoading}
+            icon="✅"
+            color="success"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <MetricCard
+            title="Avg. Time Invested"
+            value={engagementData?.averageTimeInvested ? formatDuration(engagementData.averageTimeInvested) : '—'}
+            loading={engagementLoading}
+            icon="⏱️"
+            color="info"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <MetricCard
+            title="Avg. Screen Revisits"
+            value={engagementData?.averageScreenRevisits ? engagementData.averageScreenRevisits.toFixed(1) : '—'}
+            loading={engagementLoading}
+            icon="🔄"
+            color="warning"
+          />
+        </Grid>
+        
+        {/* Engagement Level Breakdown */}
+        <Grid item xs={12} md={8}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              📊 Engagement Level Distribution
+            </Typography>
+            <EngagementChart data={engagementData} height={300} />
+          </Paper>
+        </Grid>
+        
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              🎯 Engagement Breakdown
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {engagementData?.engagementBreakdown && Object.entries(engagementData.engagementBreakdown).map(([level, count]) => (
+                <Card key={level} variant="outlined">
+                  <CardContent sx={{ py: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box>
+                        <Chip 
+                          label={level.replace(/([A-Z])/g, ' $1').trim()} 
+                          color={getEngagementColor(level)}
+                          size="small"
+                        />
+                      </Box>
+                      <Typography variant="h6">
+                        {count.toLocaleString()}
+                      </Typography>
+                    </Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {((count / (engagementData?.totalUsers ?? 1)) * 100).toFixed(1)}% of users
+                    </Typography>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          </Paper>
+        </Grid>
+        
+        {/* Screen Flow Analysis */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              🌊 Auto-Detected User Flow Patterns
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              This diagram shows the actual paths users take through your onboarding, auto-detected from their behavior
+            </Typography>
+            {flowLoading ? (
+              <Box display="flex" justifyContent="center" p={4}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <ScreenFlowDiagram data={flowData} height={500} />
+            )}
+          </Paper>
+        </Grid>
+        
+        {/* Furthest Stage Analysis */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              🏁 Furthest Stage Reached
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              How far users progressed before dropping off or completing
+            </Typography>
+            {/* Chart showing stage progression */}
+          </Paper>
+        </Grid>
+        
+        {/* Time Investment Analysis */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              ⏰ Time Investment Patterns
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Distribution of time users spend in the onboarding process
+            </Typography>
+            {/* Time distribution chart */}
+          </Paper>
+        </Grid>
+      </Grid>
+    </Box>
+  );
+};
+
+const formatDuration = (seconds: number): string => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}m ${remainingSeconds}s`;
+};
+```
+
+### UserJourneyViewer.tsx (Individual User Journey Component)
+```tsx
+import React, { useState } from 'react';
+import { 
+  Box, 
+  TextField, 
+  Button, 
+  Paper, 
+  Typography, 
+  Timeline,
+  TimelineItem,
+  TimelineOppositeContent,
+  TimelineSeparator,
+  TimelineDot,
+  TimelineConnector,
+  TimelineContent,
+  Chip,
+  Alert
+} from '@mui/material';
+import { Search as SearchIcon, Person as PersonIcon } from '@mui/icons-material';
+import { useUserJourneySearch } from '../hooks/useUserJourney';
+import { UserJourney } from '../types/journey';
+import { formatDistance } from 'date-fns';
+
+export const UserJourneyViewer: React.FC = () => {
+  const [searchInput, setSearchInput] = useState('');
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  
+  const { searchMutation, getUserJourney, isSearching } = useUserJourneySearch();
+  
+  const handleSearch = () => {
+    if (searchInput.trim()) {
+      setSelectedUser(searchInput.trim());
+    }
+  };
+  
+  const { data: journeyData, isLoading: journeyLoading, error } = selectedUser 
+    ? getUserJourney(selectedUser) 
+    : { data: null, isLoading: false, error: null };
+  
+  const getStepColor = (screenName: string, isDropOff: boolean, visitCount: number) => {
+    if (isDropOff) return 'error';
+    if (visitCount > 1) return 'warning'; // Revisited
+    if (screenName === 'outro') return 'success'; // Completed
+    return 'primary';
+  };
+  
+  const getStepIcon = (screenName: string, isDropOff: boolean, visitCount: number) => {
+    if (isDropOff) return '🚪';
+    if (visitCount > 1) return '🔄';
+    if (screenName === 'outro') return '🎉';
+    return '👀';
+  };
+  
+  return (
+    <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        🔍 Individual User Journey Analysis
+      </Typography>
+      <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 3 }}>
+        Search for a specific user to see their complete onboarding journey
+      </Typography>
+      
+      {/* Search Interface */}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            fullWidth
+            label="Enter User Email or User ID"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="user@healthcare.com or user_12345"
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+          />
+          <Button
+            variant="contained"
+            startIcon={<SearchIcon />}
+            onClick={handleSearch}
+            disabled={!searchInput.trim() || journeyLoading}
+            sx={{ minWidth: 120 }}
+          >
+            Search
+          </Button>
+        </Box>
+      </Paper>
+      
+      {/* Journey Results */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          User not found or no journey data available for "{selectedUser}"
+        </Alert>
+      )}
+      
+      {journeyData && (
+        <Grid container spacing={3}>
+          {/* User Overview */}
+          <Grid item xs={12} md={4}>
+            <Paper sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <PersonIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">User Overview</Typography>
+              </Box>
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">User Email</Typography>
+                  <Typography variant="body1">{journeyData.userEmail || 'N/A'}</Typography>
+                </Box>
+                
+                <Box>
+                  <Typography variant="caption" color="text.secondary">User ID</Typography>
+                  <Typography variant="body1">{journeyData.userId}</Typography>
+                </Box>
+                
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Total Sessions</Typography>
+                  <Typography variant="body1">{journeyData.totalSessions}</Typography>
+                </Box>
+                
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Total Time Invested</Typography>
+                  <Typography variant="body1">
+                    {Math.floor(journeyData.totalTimeInvested / 60)}m {journeyData.totalTimeInvested % 60}s
+                  </Typography>
+                </Box>
+                
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Overall Engagement</Typography>
+                  <Chip 
+                    label={journeyData.overallEngagement.replace(/([A-Z])/g, ' $1').trim()}
+                    color={getEngagementColor(journeyData.overallEngagement)}
+                    size="small"
+                  />
+                </Box>
+                
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Status</Typography>
+                  <Chip 
+                    label={journeyData.everCompleted ? 'Completed' : 'Incomplete'}
+                    color={journeyData.everCompleted ? 'success' : 'warning'}
+                    size="small"
+                  />
+                </Box>
+              </Box>
+            </Paper>
+          </Grid>
+          
+          {/* Journey Timeline */}
+          <Grid item xs={12} md={8}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                📍 Journey Timeline
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Complete path through the onboarding process with timestamps and time spent
+              </Typography>
+              
+              <Timeline>
+                {journeyData.steps.map((step, index) => (
+                  <TimelineItem key={`${step.screenName}-${index}`}>
+                    <TimelineOppositeContent sx={{ m: 'auto 0' }} variant="body2" color="text.secondary">
+                      {formatDistance(step.firstVisit, new Date(), { addSuffix: true })}
+                      <br />
+                      <Typography variant="caption">
+                        {Math.floor(step.totalTimeSpent / 60)}m {step.totalTimeSpent % 60}s
+                      </Typography>
+                    </TimelineOppositeContent>
+                    
+                    <TimelineSeparator>
+                      <TimelineDot 
+                        color={getStepColor(step.screenName, step.isDropOffPoint, step.visitCount)}
+                        sx={{ fontSize: '1.2em' }}
+                      >
+                        {getStepIcon(step.screenName, step.isDropOffPoint, step.visitCount)}
+                      </TimelineDot>
+                      {index < journeyData.steps.length - 1 && <TimelineConnector />}
+                    </TimelineSeparator>
+                    
+                    <TimelineContent sx={{ py: '12px', px: 2 }}>
+                      <Typography variant="h6" component="span">
+                        {step.displayName}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Screen: {step.screenName}
+                        {step.visitCount > 1 && ` (visited ${step.visitCount} times)`}
+                      </Typography>
+                      {step.isDropOffPoint && (
+                        <Chip label="Drop-off Point" color="error" size="small" sx={{ mt: 1 }} />
+                      )}
+                    </TimelineContent>
+                  </TimelineItem>
+                ))}
+              </Timeline>
+            </Paper>
+          </Grid>
+        </Grid>
+      )}
+    </Box>
+  );
+};
+```
+
+## 8. Configuration & Deployment
+
+### appsettings.json (Final Configuration)
+```json
+{
+  "BigQuery": {
+    "ProjectId": "onboarding-prod-dfa00",
+    "DatasetId": "analytics_481869887",
+    "Location": "US",
+    "ServiceAccountKeyPath": "",
+    "QueryTimeoutMinutes": 5,
+    "MaxResults": 100000,
+    "EnableQueryCache": true
+  },
+  "Engagement": {
+    "PredefinedStages": [
+      {
+        "name": "welcome",
+        "displayName": "Welcome Screen",
+        "order": 1,
+        "patterns": ["welcome"]
+      },
+      {
+        "name": "dy-quiz-1",
+        "displayName": "DY Quiz Step 1", 
+        "order": 2,
+        "patterns": ["dy-quiz/1"]
+      },
+      {
+        "name": "dy-quiz-2",
+        "displayName": "DY Quiz Step 2",
+        "order": 3,
+        "patterns": ["dy-quiz/2"]
+      },
+      {
+        "name": "step1",
+        "displayName": "Job Desires Step 1",
+        "order": 4,
+        "patterns": ["step/1"]
+      },
+      {
+        "name": "step2", 
+        "displayName": "Job Desires Step 2",
+        "order": 5,
+        "patterns": ["step/2"]
+      },
+      {
+        "name": "step3",
+        "displayName": "Job Desires Step 3",
+        "order": 6,
+        "patterns": ["step/3"]
+      },
+      {
+        "name": "job-suggestions-1",
+        "displayName": "Job Suggestions Step 1",
+        "order": 7,
+        "patterns": ["job-suggestions/1"]
+      },
+      {
+        "name": "job-suggestions-2", 
+        "displayName": "Job Suggestions Step 2",
+        "order": 8,
+        "patterns": ["job-suggestions/2"]
+      },
+      {
+        "name": "outro",
+        "displayName": "Outro",
+        "order": 9,
+        "patterns": ["outro"]
+      }
+    ],
+    "EngagementScoring": {
+      "StageProgressWeight": 5,
+      "TimeInvestedWeight": 0.5,
+      "RevisitWeight": 3,
+      "CompletionBonus": 20,
+      "Thresholds": {
+        "HighlyEngaged": 80,
+        "ModeratelyEngaged": 50,
+        "LightlyEngaged": 20
+      }
+    }
+  },
+  "Cache": {
+    "DefaultExpirationMinutes": 15,
+    "UserJourneyCacheMinutes": 2,
+    "ScreenFlowCacheMinutes": 10,
+    "ConnectionString": "localhost:6379",
+    "UseRedis": false
+  },
+  "Features": {
+    "ABTestingEnabled": false,
+    "AdvancedAnalyticsEnabled": true,
+    "UserJourneyTrackingEnabled": true,
+    "RealTimeUpdatesEnabled": false
+  }
+}
+```
+
+## 9. Implementation Notes
+
+### Timestamp Handling Strategy (Final Decision)
+- **Primary: `event_timestamp`** (UTC) for all sequencing, duration calculations, and session analysis
+- **Secondary: `localTimestamp`** (user's timezone) for activity pattern analysis (peak hours, weekend usage)
+- **Time zone analysis** uses user's local time to understand when healthcare workers globally are most active
+
+### Screen Flow Auto-Detection (Final Decision)  
+- **Auto-detect actual user flows** from BigQuery data using transition analysis
+- **No manual configuration** needed - system adapts to any screen order changes automatically
+- **Individual user journey visualization** allows debugging specific user paths
+- **Backward transition detection** identifies when users go back in the flow (shows engagement)
+
+### Engagement Metrics Focus (Final Decision)
+- **Furthest Stage Reached** - Primary engagement indicator
+- **Time Invested** - Shows user commitment level  
+- **Screen Revisits** - Going back indicates engagement, not failure
+- **Engagement Scoring Algorithm** - 0-100+ point system combining all factors
+- **Four engagement levels** - Minimal, Light, Moderate, Highly Engaged
+
+### Feature Flags Architecture (Future-Ready)
+- **Graceful handling** of missing feature flag data
+- **Ready for A/B testing** when LaunchDarkly integration is added
+- **Comparative analysis** structure already in place
+- **Feature toggle** in configuration to enable when ready
+
+### Performance Optimization
+- **Intelligent caching** - 15 minutes for general data, 2 minutes for user journeys
+- **Query optimization** - Uses provided BigQuery structure as foundation
+- **Chunked data reconstruction** - Handles large fields properly
+- **Progressive loading** - Critical data loads first, details follow
+
+This specification provides a complete, production-ready architecture for a modern healthcare onboarding analytics web application that directly integrates with your existing BigQuery infrastructure while providing engagement-focused insights and individual user journey tracking capabilities.
