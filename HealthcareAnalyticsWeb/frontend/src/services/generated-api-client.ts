@@ -148,7 +148,7 @@ export class HealthcareAnalyticsApiClient {
   private baseUrl: string;
 
   constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl || 'https://localhost:64547/api';
+    this.baseUrl = baseUrl || '/api';
   }
 
   private async fetchJson<T>(url: string, init?: RequestInit): Promise<T> {

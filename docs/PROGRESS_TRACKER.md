@@ -267,11 +267,13 @@ Complete web-based analytics platform for onboarding data with BigQuery integrat
 - ✅ Service dependency injection issues
 
 ## Environment Details
-- **Development**: WSL2 on Windows
-- **Backend Port**: https://localhost:64547 (default dotnet run)
+- **Development**: WSL2 on Windows (see [DEVELOPMENT_ENVIRONMENT.md](DEVELOPMENT_ENVIRONMENT.md))
+- **Backend Port**: https://localhost:64547 (when run from Windows)
+- **Frontend Port**: http://localhost:3000 (when run from Windows)
 - **BigQuery Project**: onboarding-prod-dfa00
 - **Dataset**: analytics_481869887  
 - **Service Account**: Configured with full BigQuery access
+- **⚠️ Important**: Applications must be run from Windows, not WSL
 
 ### 🎯 **SUCCESS METRICS ACHIEVED**
 

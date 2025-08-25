@@ -260,6 +260,66 @@ public class EngagementController : ControllerBase
         }
     }
 
+    [HttpPost("job-search-exposure")]
+    public async Task<IActionResult> GetJobSearchExposure([FromBody] JobSearchExposureRequest request)
+    {
+        try {
+            if (request.StartDate > request.EndDate)
+            {
+                return BadRequest(new { Error = "Start date must be before end date" });
+            }
+
+            if (!_bigQueryClientService.IsAvailable)
+            {
+                return BadRequest(new { Error = "BigQuery client not available", Message = _bigQueryClientService.StatusMessage });
+            }
+
+            var tables = _tableService.GetTablesForDateRange(request.StartDate, request.EndDate, TableType.Events);
+            
+            if (!tables.Any())
+            {
+                return NotFound(new { Error = "No data available for selected date range", StartDate = request.StartDate, EndDate = request.EndDate });
+            }
+
+            // First, let's analyze the structure of aifp_api_response events
+            var analysisQuery = BuildJobSearchAnalysisQuery(tables);
+            var client = _bigQueryClientService.GetClient()!;
+            var queryJob = await client.CreateQueryJobAsync(analysisQuery, null);
+            var results = await queryJob.GetQueryResultsAsync();
+            
+            // Return raw analysis for now to understand the data structure
+            var analysisResults = new List<Dictionary<string, object>>();
+            foreach (var row in results)
+            {
+                var rowData = new Dictionary<string, object>();
+                foreach (var field in row.Schema.Fields)
+                {
+                    rowData[field.Name] = row[field.Name]?.ToString() ?? "null";
+                }
+                analysisResults.Add(rowData);
+            }
+
+            return Ok(new 
+            {
+                Success = true,
+                Analysis = analysisResults,
+                DateRange = new DateRangeInfo
+                {
+                    StartDate = request.StartDate,
+                    EndDate = request.EndDate,
+                    TotalDays = (request.EndDate - request.StartDate).Days + 1
+                },
+                TablesUsed = tables.Count,
+                Message = "Analysis of aifp_api_response events"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error analyzing job search exposure");
+            return StatusCode(500, new { Error = "Internal server error", Details = ex.Message });
+        }
+    }
+
     [HttpPost("time-investment")]
     public async Task<IActionResult> GetTimeInvestment([FromBody] TimeInvestmentRequest request)
     {
@@ -774,6 +834,71 @@ public class EngagementController : ControllerBase
                 min_duration,
                 max_duration
             FROM overall_stats
+        ";
+    }
+
+    private string BuildJobSearchAnalysisQuery(List<TableInfo> tables)
+    {
+        // Simplified query to avoid aggregation issues - focus on step 4 and search results
+        var selectClause = @"
+            user_pseudo_id,
+            (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'endpoint') as endpoint,
+            (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'path') as path,
+            (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'method') as method,
+            (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'response_body') as response_body,
+            (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'body') as body,
+            (SELECT value.int_value FROM UNNEST(event_params) WHERE key = 'status_code') as status_code
+        ";
+
+        var whereClause = @"
+            event_name = 'aifp_api_response'
+            AND LOWER((SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'endpoint')) LIKE '%step%4%'
+        ";
+
+        var baseQuery = tables.Count == 1 
+            ? $"SELECT {selectClause} FROM `{tables.First().FullyQualifiedId}` WHERE {whereClause}"
+            : string.Join("\nUNION ALL\n", tables.Select(table => 
+                $"SELECT {selectClause} FROM `{table.FullyQualifiedId}` WHERE {whereClause}"));
+
+        return $@"
+            WITH filtered_responses AS (
+                {baseQuery}
+            )
+            SELECT 
+                endpoint,
+                path,
+                method,
+                status_code,
+                COUNT(*) as total_responses,
+                COUNT(DISTINCT user_pseudo_id) as unique_users,
+                COUNT(CASE WHEN LOWER(COALESCE(response_body, body)) LIKE '%searchresult%' THEN 1 END) as contains_searchresult,
+                COUNT(CASE WHEN LOWER(COALESCE(response_body, body)) LIKE '%job%' THEN 1 END) as contains_job,
+                COUNT(CASE WHEN LOWER(COALESCE(response_body, body)) LIKE '%position%' THEN 1 END) as contains_position,
+                COUNT(CASE WHEN LOWER(COALESCE(response_body, body)) LIKE '%title%' THEN 1 END) as contains_title,
+                COUNT(CASE WHEN LOWER(COALESCE(response_body, body)) LIKE '%location%' THEN 1 END) as contains_location,
+                COUNT(CASE WHEN LENGTH(COALESCE(response_body, body)) > 50 THEN 1 END) as has_substantial_response,
+                CASE 
+                    WHEN LOWER(endpoint) LIKE '%step%4%submit%' OR (LOWER(endpoint) LIKE '%step%4%' AND method = 'POST')
+                    THEN 'Step_4_Submit'
+                    WHEN LOWER(endpoint) LIKE '%step%4%'
+                    THEN 'Step_4_Other'
+                    ELSE 'Other'
+                END as endpoint_category,
+                -- Sample response (first 100 chars from any response with content)
+                MIN(CASE WHEN LENGTH(COALESCE(response_body, body)) > 0 
+                    THEN SUBSTR(COALESCE(response_body, body), 1, 100)
+                    ELSE NULL
+                END) as sample_response
+            FROM filtered_responses
+            GROUP BY endpoint, path, method, status_code
+            ORDER BY 
+                CASE 
+                    WHEN LOWER(endpoint) LIKE '%step%4%submit%' OR (LOWER(endpoint) LIKE '%step%4%' AND method = 'POST') THEN 1
+                    WHEN contains_searchresult > 0 THEN 2
+                    ELSE 3
+                END,
+                total_responses DESC
+            LIMIT 20
         ";
     }
 
@@ -1519,4 +1644,14 @@ public class WelcomeActionBreakdown
     public double ProgressionRate { get; set; }
     public double ExitRate { get; set; }
     public double AverageWelcomeEvents { get; set; }
+}
+
+// Job Search Exposure Analytics Models
+public class JobSearchExposureRequest
+{
+    [Required]
+    public DateTime StartDate { get; set; }
+    
+    [Required]
+    public DateTime EndDate { get; set; }
 }
