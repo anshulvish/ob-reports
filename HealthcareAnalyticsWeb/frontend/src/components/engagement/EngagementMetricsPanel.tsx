@@ -11,6 +11,7 @@ import { DeviceChart } from '../charts/DeviceChart';
 import { StageProgressionChart } from '../charts/StageProgressionChart';
 import { useDeviceAnalytics } from '../../hooks/useDeviceAnalytics';
 import { useStageProgression } from '../../hooks/useStageProgression';
+import { useWelcomeEngagement } from '../../hooks/useWelcomeEngagement';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
@@ -106,6 +107,14 @@ export const EngagementMetricsPanel: React.FC<EngagementMetricsPanelProps> = ({
   });
   
   console.log('🔧 Stage Progression:', { stageLoading, stageError, hasData: !!stageData });
+
+  // Welcome screen engagement analytics
+  const { data: welcomeData, isLoading: welcomeLoading, error: welcomeError } = useWelcomeEngagement({
+    startDate,
+    endDate
+  });
+  
+  console.log('🔧 Welcome Engagement:', { welcomeLoading, welcomeError, hasData: !!welcomeData });
   
   // Debug logging
   console.log('🎨 Rendering Device Analytics section');
@@ -218,6 +227,31 @@ export const EngagementMetricsPanel: React.FC<EngagementMetricsPanelProps> = ({
     };
   };
 
+  const getWelcomeEngagementChartData = () => {
+    if (!welcomeData?.welcomeMetrics) return null;
+
+    const metrics = welcomeData.welcomeMetrics;
+    
+    return {
+      labels: ['Begin Profile Setup', 'Skip for Now'],
+      datasets: [
+        {
+          label: 'User Actions',
+          data: [metrics.beginProfileClicks, metrics.skipForNowClicks],
+          backgroundColor: [
+            'rgba(34, 197, 94, 0.8)',   // green - begin profile (positive engagement)
+            'rgba(249, 115, 22, 0.8)',  // orange - skip for now (lower engagement)
+          ],
+          borderColor: [
+            'rgb(34, 197, 94)',
+            'rgb(249, 115, 22)',
+          ],
+          borderWidth: 2,
+        },
+      ],
+    };
+  };
+
   if (loading) {
     return (
       <Card>
@@ -270,6 +304,7 @@ export const EngagementMetricsPanel: React.FC<EngagementMetricsPanelProps> = ({
 
   const distributionChartData = getEngagementDistributionChartData();
   const timeToCompletionChartData = getTimeToCompletionChartData();
+  const welcomeEngagementChartData = getWelcomeEngagementChartData();
 
   return (
     <div className="space-y-6">
@@ -684,6 +719,146 @@ export const EngagementMetricsPanel: React.FC<EngagementMetricsPanelProps> = ({
           )}
         </CardContent>
       </Card>
+
+      {/* Welcome Screen Engagement Analytics */}
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-2xl font-bold tracking-tight">👋 Welcome Screen Engagement</h3>
+          <p className="text-muted-foreground mt-1">
+            Initial user commitment: Begin profile setup vs Skip for now clicks
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Welcome Engagement Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>🎯 Welcome Screen Actions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {welcomeLoading ? (
+                <div className="flex items-center justify-center h-[300px]">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : welcomeError ? (
+                <Alert className="mt-4">
+                  <AlertDescription>
+                    Failed to load welcome engagement data: {welcomeError instanceof Error ? welcomeError.message : 'Unknown error'}
+                  </AlertDescription>
+                </Alert>
+              ) : welcomeEngagementChartData ? (
+                <div className="relative h-[300px]">
+                  <Doughnut 
+                    data={welcomeEngagementChartData}
+                    options={{
+                      ...getDefaultChartOptions(),
+                      plugins: {
+                        ...getDefaultChartOptions().plugins,
+                        legend: {
+                          ...getDefaultChartOptions().plugins.legend,
+                          position: 'bottom' as const,
+                        },
+                        tooltip: {
+                          ...getDefaultChartOptions().plugins.tooltip,
+                          callbacks: {
+                            label: function(context: any) {
+                              const total = context.dataset.data.reduce((a: any, b: any) => a + b, 0);
+                              const percentage = ((context.parsed / total) * 100).toFixed(1);
+                              return `${context.label}: ${context.parsed.toLocaleString()} clicks (${percentage}%)`;
+                            }
+                          }
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[200px]">
+                  <div className="text-muted-foreground">
+                    No welcome engagement data available
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Welcome Engagement Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle>📊 Welcome Screen Metrics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {welcomeData?.welcomeMetrics ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <p className="text-2xl font-bold text-green-600">
+                        {welcomeData.welcomeMetrics.beginProfileClicks.toLocaleString()}
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-400">
+                        Begin Profile Setup
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {welcomeData.welcomeMetrics.beginProfileRate.toFixed(1)}% of users
+                      </p>
+                    </div>
+                    <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                      <p className="text-2xl font-bold text-orange-600">
+                        {welcomeData.welcomeMetrics.skipForNowClicks.toLocaleString()}
+                      </p>
+                      <p className="text-sm text-orange-700 dark:text-orange-400">
+                        Skip for Now
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {welcomeData.welcomeMetrics.skipForNowRate.toFixed(1)}% of users
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Total Welcome Views:</span>
+                      <span className="text-sm font-bold">
+                        {welcomeData.welcomeMetrics.totalUsers.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Users Progressed:</span>
+                      <span className="text-sm font-bold text-green-600">
+                        {welcomeData.welcomeMetrics.totalProgressed.toLocaleString()} 
+                        <span className="text-xs text-muted-foreground ml-1">
+                          ({welcomeData.welcomeMetrics.progressionRate.toFixed(1)}%)
+                        </span>
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Users Exited:</span>
+                      <span className="text-sm font-bold text-red-600">
+                        {welcomeData.welcomeMetrics.totalExited.toLocaleString()}
+                        <span className="text-xs text-muted-foreground ml-1">
+                          ({welcomeData.welcomeMetrics.exitRate.toFixed(1)}%)
+                        </span>
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Avg Events per User:</span>
+                      <span className="text-sm font-bold">
+                        {welcomeData.welcomeMetrics.averageEventsPerUser.toFixed(1)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[200px]">
+                  <div className="text-muted-foreground">
+                    {welcomeLoading ? 'Loading welcome metrics...' : 'No welcome engagement data available'}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };

@@ -128,14 +128,19 @@ Complete web-based analytics platform for onboarding data with BigQuery integrat
 - [x] **Enhanced EngagementMetricsPanel** - Complete analytics dashboard
   - Device analytics integration with interactive charts
   - Stage progression analysis with funnel visualization
+  - Time to completion distribution chart (replaced useless avg vs median chart)
   - Comprehensive engagement metrics with proper theming
   - Error handling and loading states for all analytics
 
-### 🔄 Currently In Progress
-- [ ] **Stage Progression API Debug** - Backend 500 errors for stage progression
-  - Device analytics working perfectly ✅
-  - Stage progression and time investment endpoints return errors
-  - Console logging added for debugging API response structure
+### 🔄 Recently Completed
+- [x] **Stage Progression API Debug** - Fixed backend 500 errors ✅
+  - Simplified complex BigQuery queries to avoid window function issues
+  - Enhanced error handling and logging for better debugging
+  - Stage progression and time investment endpoints now working
+- [x] **UX Improvement** - Replaced useless average vs median chart ✅
+  - New time to completion distribution chart shows user completion patterns
+  - Color-coded bars from green (fast) to red (slow) completion times
+  - Shows distribution of how long users take to complete onboarding
 
 ### ✅ Phase 1C - API Client Generation Complete
 
@@ -309,6 +314,7 @@ Complete web-based analytics platform for onboarding data with BigQuery integrat
   - Device analytics with comprehensive breakdowns (device type, OS, browser)
   - Stage progression funnel analysis with 9-stage onboarding tracking
   - Time investment analytics with session duration insights
+  - Time to completion distribution showing user completion patterns
   - Interactive Chart.js visualizations with proper dark mode support
 
 - ✅ **Backend API Enhancements** - Three new analytics endpoints
@@ -324,6 +330,15 @@ Complete web-based analytics platform for onboarding data with BigQuery integrat
 - ✅ Rebranded from "Healthcare Analytics" to "Onboarding Analytics"
 - ✅ Improved accessibility and responsive design
 - ✅ Bundle optimization and build improvements
+
+### **August 25, 2025 - Welcome Screen Engagement Analytics**
+- ✅ **Welcome Screen Analytics** - Track initial user commitment patterns
+  - POST /api/engagement/welcome-engagement endpoint created
+  - Analyzes "Begin profile setup" vs "Skip for now" behavior based on screen view patterns
+  - Users with only welcome screen views = Skip for now
+  - Users with additional screen views = Begin profile setup
+  - Frontend visualization with doughnut chart and detailed metrics
+  - Shows progression rates, exit rates, and user action breakdown
 
 ---
 

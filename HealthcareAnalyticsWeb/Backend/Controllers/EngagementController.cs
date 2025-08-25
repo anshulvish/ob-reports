@@ -198,6 +198,68 @@ public class EngagementController : ControllerBase
         }
     }
 
+    [HttpPost("welcome-engagement")]
+    public async Task<IActionResult> GetWelcomeEngagement([FromBody] WelcomeEngagementRequest request)
+    {
+        try {
+            if (request.StartDate > request.EndDate)
+            {
+                return BadRequest(new { Error = "Start date must be before end date" });
+            }
+
+            if (!_bigQueryClientService.IsAvailable)
+            {
+                return BadRequest(new { Error = "BigQuery client not available", Message = _bigQueryClientService.StatusMessage });
+            }
+
+            var tables = _tableService.GetTablesForDateRange(request.StartDate, request.EndDate, TableType.Events);
+            
+            if (!tables.Any())
+            {
+                return NotFound(new { Error = "No data available for selected date range", StartDate = request.StartDate, EndDate = request.EndDate });
+            }
+
+            _logger.LogInformation("Building welcome engagement query for {TableCount} tables", tables.Count);
+            
+            var query = BuildWelcomeEngagementQuery(tables, request);
+            
+            _logger.LogInformation("Executing welcome engagement query");
+            
+            var client = _bigQueryClientService.GetClient()!;
+            var queryJob = await client.CreateQueryJobAsync(query, null);
+            var results = await queryJob.GetQueryResultsAsync();
+            
+            _logger.LogInformation("Welcome engagement query returned {RowCount} rows", results.Count());
+            
+            var welcomeMetrics = ProcessWelcomeEngagementResults(results);
+
+            return Ok(new WelcomeEngagementResponse
+            {
+                Success = true,
+                DateRange = new DateRangeInfo
+                {
+                    StartDate = request.StartDate,
+                    EndDate = request.EndDate,
+                    TotalDays = (request.EndDate - request.StartDate).Days + 1
+                },
+                TablesUsed = tables.Select(t => new TableUsedInfo 
+                { 
+                    TableName = t.TableId, 
+                    TableId = t.TableId,
+                    RowCount = t.RowCount ?? 0 
+                }).ToList(),
+                WelcomeMetrics = welcomeMetrics,
+                Message = $"Welcome engagement retrieved for {welcomeMetrics.TotalUsers:N0} users from {tables.Count} tables"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving welcome engagement for date range {StartDate} to {EndDate}. Error: {ErrorMessage}", 
+                request.StartDate, request.EndDate, ex.Message);
+            return StatusCode(500, new { Error = "Internal server error", Details = ex.Message, StackTrace = ex.StackTrace });
+        }
+    }
+
     [HttpPost("time-investment")]
     public async Task<IActionResult> GetTimeInvestment([FromBody] TimeInvestmentRequest request)
     {
@@ -715,6 +777,109 @@ public class EngagementController : ControllerBase
         ";
     }
 
+    private string BuildWelcomeEngagementQuery(List<TableInfo> tables, WelcomeEngagementRequest request)
+    {
+        // Track welcome screen interactions and user paths based on screen view patterns
+        var selectClause = @"
+            user_pseudo_id,
+            event_name,
+            (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'screenName') as screenName,
+            event_timestamp
+        ";
+
+        var whereClause = @"
+            user_pseudo_id IS NOT NULL 
+            AND event_name = 'aifp_screen_view'
+        ";
+
+        var baseQuery = tables.Count == 1 
+            ? $"SELECT {selectClause} FROM `{tables.First().FullyQualifiedId}` WHERE {whereClause}"
+            : string.Join("\nUNION ALL\n", tables.Select(table => 
+                $"SELECT {selectClause} FROM `{table.FullyQualifiedId}` WHERE {whereClause}"));
+
+        return $@"
+            WITH all_screen_views AS (
+                {baseQuery}
+            ),
+            user_screen_patterns AS (
+                SELECT 
+                    user_pseudo_id,
+                    COUNTIF(screenName = 'welcome') as welcome_views,
+                    COUNTIF(screenName != 'welcome' AND screenName IS NOT NULL) as other_screen_views,
+                    COUNT(*) as total_screen_views,
+                    ARRAY_AGG(DISTINCT screenName IGNORE NULLS) as screens_visited
+                FROM all_screen_views
+                GROUP BY user_pseudo_id
+                HAVING welcome_views > 0  -- Only users who viewed welcome screen
+            ),
+            user_actions AS (
+                SELECT 
+                    user_pseudo_id,
+                    welcome_views,
+                    other_screen_views,
+                    total_screen_views,
+                    screens_visited,
+                    -- Determine user action based on screen view pattern
+                    CASE 
+                        WHEN other_screen_views > 0 THEN 'begin_profile_setup'  -- Has other screen views = clicked Begin
+                        WHEN other_screen_views = 0 THEN 'skip_for_now'  -- Only welcome screen = clicked Skip
+                        ELSE 'unknown'
+                    END as user_action
+                FROM user_screen_patterns
+            ),
+            summary_stats AS (
+                SELECT
+                    user_action,
+                    COUNT(*) as user_count,
+                    COUNT(CASE WHEN other_screen_views > 0 THEN 1 END) as users_progressed,
+                    COUNT(CASE WHEN other_screen_views = 0 THEN 1 END) as users_exited,
+                    AVG(total_screen_views) as avg_screen_views
+                FROM user_actions
+                GROUP BY user_action
+            ),
+            overall_stats AS (
+                SELECT
+                    COUNT(*) as total_users,
+                    COUNT(CASE WHEN user_action = 'begin_profile_setup' THEN 1 END) as total_progressed,
+                    COUNT(CASE WHEN user_action = 'skip_for_now' THEN 1 END) as total_exited,
+                    COUNT(CASE WHEN user_action = 'begin_profile_setup' THEN 1 END) as begin_profile_clicks,
+                    COUNT(CASE WHEN user_action = 'skip_for_now' THEN 1 END) as skip_for_now_clicks,
+                    AVG(total_screen_views) as avg_events_per_user
+                FROM user_actions
+            )
+            SELECT 
+                'action_summary' as metric_type,
+                user_action,
+                user_count,
+                users_progressed,
+                users_exited,
+                avg_screen_views as avg_welcome_events,
+                NULL as total_users,
+                NULL as total_progressed,
+                NULL as total_exited,
+                NULL as begin_profile_clicks,
+                NULL as skip_for_now_clicks,
+                NULL as avg_events_per_user
+            FROM summary_stats
+            UNION ALL
+            SELECT 
+                'overall_stats' as metric_type,
+                NULL as user_action,
+                NULL as user_count,
+                NULL as users_progressed,
+                NULL as users_exited,
+                NULL as avg_welcome_events,
+                total_users,
+                total_progressed,
+                total_exited,
+                begin_profile_clicks,
+                skip_for_now_clicks,
+                avg_events_per_user
+            FROM overall_stats
+            ORDER BY metric_type, user_action
+        ";
+    }
+
     private string BuildUserSessionsQuery(List<TableInfo> tables, UserSessionsRequest request)
     {
         var selectClause = @"
@@ -970,6 +1135,72 @@ public class EngagementController : ControllerBase
 
         timeMetrics.Distribution = distribution;
         return timeMetrics;
+    }
+
+    private WelcomeMetrics ProcessWelcomeEngagementResults(BigQueryResults results)
+    {
+        var welcomeMetrics = new WelcomeMetrics();
+        var actionBreakdown = new List<WelcomeActionBreakdown>();
+
+        foreach (var row in results)
+        {
+            var metricType = row["metric_type"]?.ToString();
+
+            if (metricType == "action_summary")
+            {
+                var userAction = row["user_action"]?.ToString() ?? "unknown";
+                actionBreakdown.Add(new WelcomeActionBreakdown
+                {
+                    Action = userAction,
+                    UserCount = Convert.ToInt32(row["user_count"] ?? 0),
+                    UsersProgressed = Convert.ToInt32(row["users_progressed"] ?? 0),
+                    UsersExited = Convert.ToInt32(row["users_exited"] ?? 0),
+                    AverageWelcomeEvents = Convert.ToDouble(row["avg_welcome_events"] ?? 0)
+                });
+            }
+            else if (metricType == "overall_stats")
+            {
+                welcomeMetrics.TotalUsers = Convert.ToInt32(row["total_users"] ?? 0);
+                welcomeMetrics.TotalProgressed = Convert.ToInt32(row["total_progressed"] ?? 0);
+                welcomeMetrics.TotalExited = Convert.ToInt32(row["total_exited"] ?? 0);
+                welcomeMetrics.BeginProfileClicks = Convert.ToInt32(row["begin_profile_clicks"] ?? 0);
+                welcomeMetrics.SkipForNowClicks = Convert.ToInt32(row["skip_for_now_clicks"] ?? 0);
+                welcomeMetrics.AverageEventsPerUser = Convert.ToDouble(row["avg_events_per_user"] ?? 0);
+            }
+        }
+
+        // Calculate conversion rates
+        welcomeMetrics.ProgressionRate = welcomeMetrics.TotalUsers > 0 
+            ? (double)welcomeMetrics.TotalProgressed / welcomeMetrics.TotalUsers * 100 
+            : 0;
+
+        welcomeMetrics.ExitRate = welcomeMetrics.TotalUsers > 0 
+            ? (double)welcomeMetrics.TotalExited / welcomeMetrics.TotalUsers * 100 
+            : 0;
+
+        var totalClicks = welcomeMetrics.BeginProfileClicks + welcomeMetrics.SkipForNowClicks;
+        welcomeMetrics.BeginProfileRate = totalClicks > 0 
+            ? (double)welcomeMetrics.BeginProfileClicks / totalClicks * 100 
+            : 0;
+
+        welcomeMetrics.SkipForNowRate = totalClicks > 0 
+            ? (double)welcomeMetrics.SkipForNowClicks / totalClicks * 100 
+            : 0;
+
+        // Calculate progression percentage for each action
+        foreach (var action in actionBreakdown)
+        {
+            action.ProgressionRate = action.UserCount > 0 
+                ? (double)action.UsersProgressed / action.UserCount * 100 
+                : 0;
+            action.ExitRate = action.UserCount > 0 
+                ? (double)action.UsersExited / action.UserCount * 100 
+                : 0;
+        }
+
+        welcomeMetrics.ActionBreakdown = actionBreakdown.OrderByDescending(a => a.UserCount).ToList();
+
+        return welcomeMetrics;
     }
 
     private List<UserSession> ProcessUserSessionsResults(BigQueryResults results)
@@ -1243,4 +1474,49 @@ public class TimeDistributionBucket
     
     // Set by processing logic
     public int TotalSessions { get; set; }
+}
+
+// Welcome Engagement Analytics Models
+public class WelcomeEngagementRequest
+{
+    [Required]
+    public DateTime StartDate { get; set; }
+    
+    [Required]
+    public DateTime EndDate { get; set; }
+}
+
+public class WelcomeEngagementResponse
+{
+    public bool Success { get; set; }
+    public DateRangeInfo DateRange { get; set; } = new();
+    public List<TableUsedInfo> TablesUsed { get; set; } = new();
+    public WelcomeMetrics WelcomeMetrics { get; set; } = new();
+    public string Message { get; set; } = string.Empty;
+}
+
+public class WelcomeMetrics
+{
+    public int TotalUsers { get; set; }
+    public int TotalProgressed { get; set; }
+    public int TotalExited { get; set; }
+    public int BeginProfileClicks { get; set; }
+    public int SkipForNowClicks { get; set; }
+    public double ProgressionRate { get; set; } // Percentage who progressed beyond welcome
+    public double ExitRate { get; set; } // Percentage who exited during onboarding
+    public double BeginProfileRate { get; set; } // Percentage who clicked "Begin profile setup"
+    public double SkipForNowRate { get; set; } // Percentage who clicked "Skip for now"
+    public double AverageEventsPerUser { get; set; }
+    public List<WelcomeActionBreakdown> ActionBreakdown { get; set; } = new();
+}
+
+public class WelcomeActionBreakdown
+{
+    public string Action { get; set; } = string.Empty; // begin_profile_setup, skip_for_now, exit_onboarding, viewed_welcome_only, other
+    public int UserCount { get; set; }
+    public int UsersProgressed { get; set; }
+    public int UsersExited { get; set; }
+    public double ProgressionRate { get; set; }
+    public double ExitRate { get; set; }
+    public double AverageWelcomeEvents { get; set; }
 }
