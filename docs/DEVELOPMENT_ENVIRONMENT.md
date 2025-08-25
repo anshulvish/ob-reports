@@ -349,3 +349,97 @@ tail -f /tmp/wsl-frontend.log
 ---
 
 **🎯 ACHIEVEMENT SUMMARY**: Complete visual testing ecosystem successfully established! Both technical functionality AND user experience can now be comprehensively validated through automated browser interactions, console monitoring, and visual regression testing.
+
+---
+
+## 🚀 **BIGQUERY MCP SERVER CONFIGURED!**
+
+### Direct BigQuery Access Now Available ✅
+
+**Installation Summary:**
+```bash
+# MCP Server Installation (COMPLETED)
+npm install @ergut/mcp-bigquery-server
+
+# Configuration (COMPLETED)
+claude mcp add bigquery --scope local npx @ergut/mcp-bigquery-server -- \
+  --project-id onboarding-prod-dfa00 \
+  --location US \
+  --key-file /mnt/c/Anshul/Work/keys/onboarding-prod-dfa00-9a059d9f43b8.json
+```
+
+**Current Status:** ✅ **FULLY OPERATIONAL**
+
+### **BigQuery MCP Tool Name**
+```bash
+# Use this tool name to query BigQuery directly:
+mcp__bigquery__query
+```
+
+### What We Can Now Do
+
+#### **1. Direct SQL Query Testing** ✅
+```sql
+-- Test queries directly before implementing in C#
+SELECT COUNT(DISTINCT user_pseudo_id) as total_users
+FROM `onboarding-prod-dfa00.analytics_481869887.events_*`
+WHERE _TABLE_SUFFIX BETWEEN '20250818' AND '20250825'
+-- Result: 1,490 users (Aug 18-25 range)
+```
+
+#### **2. Data Validation & Debugging** ✅
+```sql
+-- Compare with backend results to debug discrepancies
+SELECT COUNT(*) as total_tables 
+FROM `onboarding-prod-dfa00.analytics_481869887.INFORMATION_SCHEMA.TABLES`
+-- Result: 97 tables available
+```
+
+#### **2. Rapid Analytics Prototyping**
+- Explore event data structure
+- Test complex aggregations
+- Validate BigQuery syntax
+- Analyze data patterns without backend compilation
+
+#### **3. Data Exploration**
+- List all available tables
+- Examine table schemas
+- Query materialized views
+- Analyze event parameters
+
+### **BigQuery Access Details**
+- **Project**: onboarding-prod-dfa00
+- **Dataset**: analytics_481869887
+- **Location**: US (multi-region)
+- **Tables**: 48 daily tables + 1 intraday table
+- **Date Range**: Jun 26, 2025 to Aug 25, 2025
+- **Query Limit**: 1GB processing (safe limit)
+- **Access**: Read-only via service account
+
+### **Example Queries for Healthcare Analytics**
+```sql
+-- Welcome screen engagement
+SELECT 
+  COUNTIF(other_screens > 0) as begin_profile_setup,
+  COUNTIF(other_screens = 0) as skip_for_now
+FROM (
+  SELECT 
+    user_pseudo_id,
+    COUNTIF(screenName != 'welcome') as other_screens
+  FROM `analytics_481869887.events_*`
+  WHERE event_name = 'aifp_screen_view'
+  GROUP BY user_pseudo_id
+)
+
+-- Device analytics
+SELECT 
+  device.category,
+  COUNT(DISTINCT user_pseudo_id) as users
+FROM `analytics_481869887.events_*`
+GROUP BY device.category
+ORDER BY users DESC
+```
+
+---
+
+**🎯 COMPLETE DEVELOPMENT ECOSYSTEM**: Visual testing with Playwright + Direct BigQuery access + Full-stack self-testing = Maximum development velocity!

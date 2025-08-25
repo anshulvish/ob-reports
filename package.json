@@ -1,6 +1,9 @@
 {
   "dependencies": {
+    "@ergut/mcp-bigquery-server": "^1.0.3",
     "@playwright/mcp": "^0.0.35",
-    "better-playwright-mcp": "^0.2.7"
+    "@thlee/bigquery-mcp": "^0.0.5",
+    "better-playwright-mcp": "^0.2.7",
+    "bigquery-mcp-server": "^0.1.16"
   }
 }
