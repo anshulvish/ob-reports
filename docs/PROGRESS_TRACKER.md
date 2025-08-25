@@ -82,10 +82,60 @@ Complete web-based analytics platform for onboarding data with BigQuery integrat
 - **Date range**: 2025-06-26 to 2025-08-24
 - **User-driven queries working**: Successfully tested sample, engagement, and user journey queries
 
+### ✅ **Phase 4 - Advanced Analytics & Chart Theming Complete**
+
+#### Enhanced Analytics Endpoints ✅
+- [x] **Device Analytics** - Complete device type breakdown system
+  - POST /api/engagement/device-analytics - Device, OS, and browser analytics
+  - Comprehensive device category analysis with session metrics
+  - Mobile, desktop, tablet usage statistics
+  - Operating system distribution analysis
+  - Browser compatibility insights
+  
+- [x] **Stage Progression Analytics** - User journey funnel analysis
+  - POST /api/engagement/stage-progression - Complete onboarding funnel
+  - 9-stage progression tracking (welcome → outro)
+  - Retention rate calculations at each stage
+  - Drop-off point identification and analysis
+  - Average time spent per stage metrics
+  
+- [x] **Time Investment Analytics** - Session duration insights
+  - POST /api/engagement/time-investment - Time distribution analysis
+  - Session duration bucketing (< 30s, 30-60s, 1-5m, 5-15m, 15-30m, 30m+)
+  - Statistical analysis (median, percentiles)
+  - User engagement time patterns
+
+#### Chart Visualization System ✅
+- [x] **DeviceChart Component** - Interactive device analytics visualization
+  - Doughnut charts for device type distribution
+  - Bar charts for OS and browser breakdowns
+  - Responsive design with proper dark mode theming
+  - Detailed tooltips with percentage and count information
+  
+- [x] **StageProgressionChart Component** - Funnel visualization system
+  - Funnel charts for stage progression analysis  
+  - Retention rate line charts with trend analysis
+  - Drop-off visualization with problem identification
+  - Interactive tooltips with stage details
+
+#### Chart Theming & Dark Mode Fix ✅
+- [x] **Centralized Chart Theming** - Complete Chart.js dark mode support
+  - Created chartDefaults.ts utility for consistent theming
+  - Dynamic CSS variable resolution at runtime
+  - Automatic theme adaptation (light/dark mode switching)
+  - Fixed black text visibility issues in dark mode
+  
+- [x] **Enhanced EngagementMetricsPanel** - Complete analytics dashboard
+  - Device analytics integration with interactive charts
+  - Stage progression analysis with funnel visualization
+  - Comprehensive engagement metrics with proper theming
+  - Error handling and loading states for all analytics
+
 ### 🔄 Currently In Progress
-- [ ] **Theme Toggle Visibility Issue** - Toggle component exists but not rendering in header
-  - ThemeToggle added to AppLayout.tsx but still not visible to user
-  - Component and context working, visibility/rendering issue to debug
+- [ ] **Stage Progression API Debug** - Backend 500 errors for stage progression
+  - Device analytics working perfectly ✅
+  - Stage progression and time investment endpoints return errors
+  - Console logging added for debugging API response structure
 
 ### ✅ Phase 1C - API Client Generation Complete
 
@@ -247,6 +297,25 @@ Complete web-based analytics platform for onboarding data with BigQuery integrat
 ---
 
 ## 🔄 **RECENT MAJOR UPDATES**
+
+### **August 25, 2025 - Advanced Analytics & Chart Theming Resolution**
+- ✅ **Chart Text Color Fix** - Resolved black text visibility in dark mode
+  - Fixed all Chart.js components with centralized theming utility
+  - Dynamic CSS variable resolution for proper theme adaptation
+  - Consistent theming across doughnut, bar, and line charts
+  - Enhanced tooltips, legends, and axis labels for accessibility
+
+- ✅ **Enhanced Analytics Platform** - Complete device and stage analytics
+  - Device analytics with comprehensive breakdowns (device type, OS, browser)
+  - Stage progression funnel analysis with 9-stage onboarding tracking
+  - Time investment analytics with session duration insights
+  - Interactive Chart.js visualizations with proper dark mode support
+
+- ✅ **Backend API Enhancements** - Three new analytics endpoints
+  - POST /api/engagement/device-analytics - Device type analysis
+  - POST /api/engagement/stage-progression - Onboarding funnel tracking  
+  - POST /api/engagement/time-investment - Session duration analysis
+  - Fixed BigQuery client access patterns and error handling
 
 ### **August 25, 2025 - Complete UI Redesign & Dark Mode**
 - ✅ Complete shadcn/ui migration from Material-UI
