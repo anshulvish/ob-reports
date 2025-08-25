@@ -1,23 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  Typography,
-  Grid,
-  Box,
-  Chip,
-  CircularProgress,
-  Alert,
-  Button,
-  Stack,
-  Divider
-} from '@mui/material';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Alert, AlertDescription } from '../ui/alert';
 import {
   TrendingUp,
-  People,
-  Timeline,
-  AccessTime
-} from '@mui/icons-material';
+  Users,
+  Activity,
+  Clock,
+  Loader2
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { apiClient, EngagementMetricsRequest, EngagementMetricsResponse } from '../../services/generated-api-client';
 
@@ -73,12 +64,12 @@ export const SimpleEngagementPanel: React.FC<SimpleEngagementPanelProps> = ({
     return (
       <Card>
         <CardContent>
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
-            <Stack alignItems="center" spacing={2}>
-              <CircularProgress />
-              <Typography>Calculating engagement metrics...</Typography>
-            </Stack>
-          </Box>
+          <div className="flex justify-center items-center min-h-[300px]">
+            <div className="flex flex-col items-center space-y-2">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <span className="text-sm text-muted-foreground">Calculating engagement metrics...</span>
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
@@ -88,12 +79,13 @@ export const SimpleEngagementPanel: React.FC<SimpleEngagementPanelProps> = ({
     return (
       <Card>
         <CardContent>
-          <Alert severity="error" action={
-            <Button color="inherit" size="small" onClick={fetchEngagementMetrics}>
-              Retry
-            </Button>
-          }>
-            {error}
+          <Alert variant="destructive">
+            <AlertDescription className="flex items-center justify-between">
+              <span>{error}</span>
+              <Button variant="outline" size="sm" onClick={fetchEngagementMetrics}>
+                Retry
+              </Button>
+            </AlertDescription>
           </Alert>
         </CardContent>
       </Card>
@@ -104,209 +96,185 @@ export const SimpleEngagementPanel: React.FC<SimpleEngagementPanelProps> = ({
     return (
       <Card>
         <CardContent>
-          <Box textAlign="center" py={3}>
-            <Typography variant="h6" gutterBottom>
-              Engagement Metrics
-            </Typography>
-            <Typography color="text.secondary" gutterBottom>
+          <div className="text-center py-6">
+            <h3 className="text-lg font-medium mb-2">Engagement Metrics</h3>
+            <p className="text-muted-foreground mb-4">
               Select a date range to view engagement analytics
-            </Typography>
-            <Button variant="contained" onClick={fetchEngagementMetrics} disabled={!startDate || !endDate}>
+            </p>
+            <Button onClick={fetchEngagementMetrics} disabled={!startDate || !endDate}>
               Load Engagement Metrics
             </Button>
-          </Box>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        📊 Engagement Analytics
-      </Typography>
-      <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-        {format(startDate, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}
-      </Typography>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">📊 Engagement Analytics</h2>
+        <p className="text-muted-foreground mt-1">
+          {format(startDate, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}
+        </p>
+      </div>
 
       {/* Key Metrics Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <People color="primary" sx={{ mr: 1 }} />
-                <Box>
-                  <Typography variant="h4" color="primary">
-                    {metrics.totalUsers?.toLocaleString() || '0'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Users
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <Users className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-2xl font-bold text-primary">
+                  {metrics.totalUsers?.toLocaleString() || '0'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Total Users
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <Timeline color="success" sx={{ mr: 1 }} />
-                <Box>
-                  <Typography variant="h4" color="success.main">
-                    {formatNumber(metrics.averageSessionsPerUser || 0)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Avg Sessions/User
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <Activity className="h-8 w-8 text-green-600" />
+              <div>
+                <p className="text-2xl font-bold text-green-600">
+                  {formatNumber(metrics.averageSessionsPerUser || 0)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Avg Sessions/User
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <TrendingUp color="warning" sx={{ mr: 1 }} />
-                <Box>
-                  <Typography variant="h4" color="warning.main">
-                    {formatNumber(metrics.averageEventsPerUser || 0)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Avg Events/User
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <TrendingUp className="h-8 w-8 text-orange-600" />
+              <div>
+                <p className="text-2xl font-bold text-orange-600">
+                  {formatNumber(metrics.averageEventsPerUser || 0)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Avg Events/User
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <AccessTime color="info" sx={{ mr: 1 }} />
-                <Box>
-                  <Typography variant="h4" color="info.main">
-                    {formatDuration(metrics.averageSessionDurationSeconds || 0)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Avg Session Duration
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <Clock className="h-8 w-8 text-blue-600" />
+              <div>
+                <p className="text-2xl font-bold text-blue-600">
+                  {formatDuration(metrics.averageSessionDurationSeconds || 0)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Avg Session Duration
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Detailed Metrics */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                📈 Detailed Engagement Metrics
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <Box textAlign="center">
-                    <Typography variant="h5" color="primary">
-                      {formatNumber(metrics.averageUniqueEventsPerUser || 0)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Unique Events/User
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6}>
-                  <Box textAlign="center">
-                    <Typography variant="h5" color="secondary">
-                      {formatNumber(metrics.averagePagesPerUser || 0)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Pages/User
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6}>
-                  <Box textAlign="center">
-                    <Typography variant="h5" color="success.main">
-                      {formatNumber(metrics.averageScreenViewsPerUser || 0)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Screen Views/User
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6}>
-                  <Box textAlign="center">
-                    <Typography variant="h5" color="warning.main">
-                      {formatNumber(metrics.averageAifpInteractionsPerUser || 0)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      AIFP Interactions/User
-                    </Typography>
-                  </Box>
-                </Grid>
-              </Grid>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>📈 Detailed Engagement Metrics</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <p className="text-xl font-bold text-primary">
+                  {formatNumber(metrics.averageUniqueEventsPerUser || 0)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Unique Events/User
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-bold text-purple-600">
+                  {formatNumber(metrics.averagePagesPerUser || 0)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Pages/User
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-bold text-green-600">
+                  {formatNumber(metrics.averageScreenViewsPerUser || 0)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Screen Views/User
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-bold text-orange-600">
+                  {formatNumber(metrics.averageAifpInteractionsPerUser || 0)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  AIFP Interactions/User
+                </p>
+              </div>
+            </div>
 
-              <Divider sx={{ my: 2 }} />
-
-              <Typography variant="subtitle2" gutterBottom>
-                Engagement Time Metrics
-              </Typography>
-              <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Typography variant="body2" color="text.secondary">
+            <div className="border-t pt-4">
+              <h4 className="font-semibold mb-2">Engagement Time Metrics</h4>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">
                   Avg Engagement Time:
-                </Typography>
-                <Chip 
-                  label={formatDuration(metrics.averageEngagementTimeSeconds || 0)}
-                  color="info"
-                  size="small"
-                />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+                </span>
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded">
+                  {formatDuration(metrics.averageEngagementTimeSeconds || 0)}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                🎯 Engagement Distribution
-              </Typography>
-              {metrics.engagementDistribution && metrics.engagementDistribution.length > 0 ? (
-                <Stack spacing={2}>
-                  {metrics.engagementDistribution.map((dist: any, index: number) => (
-                    <Box key={index} display="flex" justifyContent="space-between" alignItems="center">
-                      <Typography variant="body1">
-                        {dist.level} Engagement:
-                      </Typography>
-                      <Chip 
-                        label={`${dist.userCount} users`}
-                        color={dist.level === 'High' ? 'success' : dist.level === 'Medium' ? 'warning' : 'error'}
-                        size="small"
-                      />
-                    </Box>
-                  ))}
-                </Stack>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No engagement distribution data available
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-    </Box>
+        <Card>
+          <CardHeader>
+            <CardTitle>🎯 Engagement Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metrics.engagementDistribution && metrics.engagementDistribution.length > 0 ? (
+              <div className="space-y-3">
+                {metrics.engagementDistribution.map((dist: any, index: number) => (
+                  <div key={index} className="flex justify-between items-center">
+                    <span className="font-medium">
+                      {dist.level} Engagement:
+                    </span>
+                    <span className={`px-2 py-1 text-sm rounded ${
+                      dist.level === 'High' 
+                        ? 'bg-green-100 text-green-800'
+                        : dist.level === 'Medium'
+                        ? 'bg-orange-100 text-orange-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {dist.userCount} users
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No engagement distribution data available
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 

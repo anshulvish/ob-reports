@@ -1,20 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Alert,
-  CircularProgress,
-  Box,
-  Chip
-} from '@mui/material';
-import {
   CheckCircle as CheckIcon,
-  Error as ErrorIcon,
-  Warning as WarningIcon
-} from '@mui/icons-material';
+  AlertCircle as ErrorIcon,
+  AlertTriangle as WarningIcon,
+  Loader2
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { apiClient } from '../services/generated-api-client';
 import { DateRangePicker } from '../components/common/DateRangePicker';
 import { EngagementMetricsPanel } from '../components/engagement/EngagementMetricsPanel';
@@ -96,196 +89,182 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <Box>
-      <Typography variant="h4" component="h1" gutterBottom>
-        🏥 Aya Healthcare Analytics Dashboard
-      </Typography>
-      <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 3 }}>
-        System status and onboarding analytics overview
-      </Typography>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">🏥 Healthcare Analytics Dashboard</h1>
+        <p className="text-muted-foreground mt-2">
+          System status and onboarding analytics overview
+        </p>
+      </div>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} action={
-          <Button color="inherit" size="small" onClick={checkHealth}>
-            Retry
-          </Button>
-        }>
-          {error}
+        <Alert variant="destructive" className="mb-6">
+          <ErrorIcon className="h-4 w-4" />
+          <AlertDescription className="ml-2">
+            {error}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={checkHealth}
+              className="ml-2"
+            >
+              Retry
+            </Button>
+          </AlertDescription>
         </Alert>
       )}
 
-      <Grid container spacing={3}>
+      <div className="grid gap-6">
         {/* Date Range Selection */}
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <DateRangePicker onDateRangeChange={handleDateRangeChange} />
-            </CardContent>
-          </Card>
-        </Grid>
+        <Card>
+          <CardContent>
+            <DateRangePicker onDateRangeChange={handleDateRangeChange} />
+          </CardContent>
+        </Card>
 
         {/* Engagement Analytics */}
         {startDate && endDate && (
-          <Grid item xs={12}>
-            <EngagementMetricsPanel startDate={startDate} endDate={endDate} />
-          </Grid>
+          <EngagementMetricsPanel startDate={startDate} endDate={endDate} />
         )}
 
-        {/* API Health Status */}
-        <Grid item xs={12} md={6}>
+        {/* Health Status Cards */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* API Health Status */}
           <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
                 🚀 Backend API Status
-              </Typography>
-              {loading ? (
-                <Box display="flex" alignItems="center" gap={2}>
-                  <CircularProgress size={24} />
-                  <Typography>Checking API health...</Typography>
-                </Box>
-              ) : healthStatus ? (
-                <Box>
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    {getStatusIcon(healthStatus.status)}
-                    <Chip 
-                      label={healthStatus.status}
-                      color={getStatusColor(healthStatus.status)}
-                      size="small"
-                    />
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Service: {healthStatus.service}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Version: {healthStatus.version}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Environment: {healthStatus.environment}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Timestamp: {new Date(healthStatus.timestamp).toLocaleString()}
-                  </Typography>
-                </Box>
-              ) : (
-                <Typography color="text.secondary">No data available</Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* BigQuery Status */}
-        <Grid item xs={12} md={6}>
-          <Card>
+              </CardTitle>
+            </CardHeader>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                📊 BigQuery Connection
-              </Typography>
               {loading ? (
-                <Box display="flex" alignItems="center" gap={2}>
-                  <CircularProgress size={24} />
-                  <Typography>Testing BigQuery connection...</Typography>
-                </Box>
-              ) : bigQueryStatus ? (
-                <Box>
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    {getStatusIcon(bigQueryStatus.status)}
-                    <Chip 
-                      label={bigQueryStatus.status}
-                      color={getStatusColor(bigQueryStatus.status)}
-                      size="small"
-                    />
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Project: {bigQueryStatus.projectId}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Target Dataset: {bigQueryStatus.targetDataset}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Datasets Found: {bigQueryStatus.datasetCount}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Message: {bigQueryStatus.message}
-                  </Typography>
-                </Box>
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">Checking API health...</span>
+                </div>
+              ) : healthStatus ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(healthStatus.status)}
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      healthStatus.status === 'Healthy' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {healthStatus.status}
+                    </span>
+                  </div>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p>Service: {healthStatus.service}</p>
+                    <p>Version: {healthStatus.version}</p>
+                    <p>Environment: {healthStatus.environment}</p>
+                    <p>Timestamp: {new Date(healthStatus.timestamp).toLocaleString()}</p>
+                  </div>
+                </div>
               ) : (
-                <Typography color="text.secondary">No data available</Typography>
+                <p className="text-muted-foreground">No data available</p>
               )}
             </CardContent>
           </Card>
-        </Grid>
+
+          {/* BigQuery Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                📊 BigQuery Connection
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">Testing BigQuery connection...</span>
+                </div>
+              ) : bigQueryStatus ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(bigQueryStatus.status)}
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      bigQueryStatus.status === 'Connected' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {bigQueryStatus.status}
+                    </span>
+                  </div>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p>Project: {bigQueryStatus.projectId}</p>
+                    <p>Target Dataset: {bigQueryStatus.targetDataset}</p>
+                    <p>Datasets Found: {bigQueryStatus.datasetCount}</p>
+                    <p>Message: {bigQueryStatus.message}</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground">No data available</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Quick Actions */}
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                🛠️ Quick Actions
-              </Typography>
-              <Box display="flex" gap={2} flexWrap="wrap">
-                <Button 
-                  variant="contained" 
-                  onClick={checkHealth}
-                  disabled={loading}
-                  startIcon={loading ? <CircularProgress size={16} /> : null}
-                >
-                  {loading ? 'Checking...' : 'Refresh Status'}
-                </Button>
-                <Button variant="outlined" href="/diagnostics">
-                  System Diagnostics
-                </Button>
-                <Button variant="outlined" href="/user-journeys">
-                  Search User Journeys
-                </Button>
-                <Button variant="outlined" href="/screen-flow">
-                  Analyze Screen Flow
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+        <Card>
+          <CardHeader>
+            <CardTitle>🛠️ Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              <Button 
+                onClick={checkHealth}
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {loading ? 'Checking...' : 'Refresh Status'}
+              </Button>
+              <Button variant="outline" asChild>
+                <a href="/diagnostics">System Diagnostics</a>
+              </Button>
+              <Button variant="outline" asChild>
+                <a href="/user-journeys">Search User Journeys</a>
+              </Button>
+              <Button variant="outline" asChild>
+                <a href="/screen-flow">Analyze Screen Flow</a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Feature Status */}
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                📈 Feature Availability
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={6} sm={3}>
-                  <Box textAlign="center">
-                    <CheckIcon color="success" sx={{ fontSize: 40, mb: 1 }} />
-                    <Typography variant="body2" fontWeight="bold">Backend API</Typography>
-                    <Typography variant="caption" color="text.secondary">Ready</Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Box textAlign="center">
-                    <CheckIcon color="success" sx={{ fontSize: 40, mb: 1 }} />
-                    <Typography variant="body2" fontWeight="bold">BigQuery Integration</Typography>
-                    <Typography variant="caption" color="text.secondary">Configured</Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Box textAlign="center">
-                    <CheckIcon color="success" sx={{ fontSize: 40, mb: 1 }} />
-                    <Typography variant="body2" fontWeight="bold">Date-Driven Analytics</Typography>
-                    <Typography variant="caption" color="text.secondary">Ready</Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Box textAlign="center">
-                    <CheckIcon color="success" sx={{ fontSize: 40, mb: 1 }} />
-                    <Typography variant="body2" fontWeight="bold">Data Visualization</Typography>
-                    <Typography variant="caption" color="text.secondary">Ready</Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-    </Box>
+        <Card>
+          <CardHeader>
+            <CardTitle>📈 Feature Availability</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+              <div className="text-center">
+                <CheckIcon className="h-10 w-10 mx-auto mb-2 text-green-600" />
+                <p className="font-medium text-sm">Backend API</p>
+                <p className="text-xs text-muted-foreground">Ready</p>
+              </div>
+              <div className="text-center">
+                <CheckIcon className="h-10 w-10 mx-auto mb-2 text-green-600" />
+                <p className="font-medium text-sm">BigQuery Integration</p>
+                <p className="text-xs text-muted-foreground">Configured</p>
+              </div>
+              <div className="text-center">
+                <CheckIcon className="h-10 w-10 mx-auto mb-2 text-green-600" />
+                <p className="font-medium text-sm">Date-Driven Analytics</p>
+                <p className="text-xs text-muted-foreground">Ready</p>
+              </div>
+              <div className="text-center">
+                <CheckIcon className="h-10 w-10 mx-auto mb-2 text-green-600" />
+                <p className="font-medium text-sm">Data Visualization</p>
+                <p className="text-xs text-muted-foreground">Ready</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };

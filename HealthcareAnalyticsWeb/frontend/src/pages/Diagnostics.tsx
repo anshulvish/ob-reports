@@ -1,18 +1,17 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
 import { AnalyticsQueryPanel } from '../components/dashboard/AnalyticsQueryPanel';
 
 export const Diagnostics: React.FC = () => {
   return (
-    <Box>
-      <Typography variant="h4" component="h1" gutterBottom>
-        🔧 System Diagnostics
-      </Typography>
-      <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 3 }}>
-        Raw analytics queries and system diagnostics
-      </Typography>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">🔧 System Diagnostics</h1>
+        <p className="text-muted-foreground mt-2">
+          Raw analytics queries and system diagnostics
+        </p>
+      </div>
 
       <AnalyticsQueryPanel />
-    </Box>
+    </div>
   );
 };

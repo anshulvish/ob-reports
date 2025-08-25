@@ -1,173 +1,126 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Container,
-  Typography,
-  Tabs,
-  Tab,
-  Paper,
-  Stack
-} from '@mui/material';
+import { Card, CardContent } from '../components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { DateRangePicker } from '../components/common/DateRangePicker';
 import { EngagementMetricsPanel } from '../components/engagement/EngagementMetricsPanel';
 import { UserSessionsPanel } from '../components/engagement/UserSessionsPanel';
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`engagement-tabpanel-${index}`}
-      aria-labelledby={`engagement-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
-    </div>
-  );
-}
-
-function a11yProps(index: number) {
-  return {
-    id: `engagement-tab-${index}`,
-    'aria-controls': `engagement-tabpanel-${index}`,
-  };
-}
 
 export const EngagementAnalytics: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [tabValue, setTabValue] = useState(0);
 
   const handleDateRangeChange = (start: Date, end: Date) => {
     setStartDate(start);
     setEndDate(end);
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
-
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ py: 4 }}>
-        {/* Header */}
-        <Typography variant="h3" component="h1" gutterBottom>
-          📊 Engagement Analytics
-        </Typography>
-        <Typography variant="h6" color="text.secondary" gutterBottom>
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-4xl font-bold tracking-tight">📊 Engagement Analytics</h1>
+        <p className="text-xl text-muted-foreground mt-2">
           Comprehensive user engagement analysis for healthcare onboarding
-        </Typography>
+        </p>
+      </div>
 
-        {/* Date Range Picker */}
-        <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-          <DateRangePicker
-            onDateRangeChange={handleDateRangeChange}
-            disabled={false}
-          />
-        </Paper>
+      {/* Date Range Picker */}
+      <Card>
+        <CardContent>
+          <DateRangePicker onDateRangeChange={handleDateRangeChange} />
+        </CardContent>
+      </Card>
 
-        {/* Content Tabs */}
-        <Box sx={{ width: '100%' }}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs value={tabValue} onChange={handleTabChange} aria-label="engagement analytics tabs">
-              <Tab 
-                label="Engagement Metrics" 
-                icon="📈" 
-                iconPosition="start"
-                {...a11yProps(0)} 
-              />
-              <Tab 
-                label="User Sessions" 
-                icon="👤" 
-                iconPosition="start"
-                {...a11yProps(1)} 
-              />
-            </Tabs>
-          </Box>
+      {/* Content Tabs */}
+      <Tabs defaultValue="metrics" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="metrics">📈 Engagement Metrics</TabsTrigger>
+          <TabsTrigger value="sessions">👤 User Sessions</TabsTrigger>
+        </TabsList>
 
-          <TabPanel value={tabValue} index={0}>
-            {startDate && endDate ? (
-              <EngagementMetricsPanel 
-                startDate={startDate} 
-                endDate={endDate} 
-              />
-            ) : (
-              <Box textAlign="center" py={8}>
-                <Typography variant="h5" color="text.secondary" gutterBottom>
-                  Select a Date Range
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  Choose start and end dates above to view engagement metrics
-                </Typography>
-              </Box>
-            )}
-          </TabPanel>
+        <TabsContent value="metrics" className="mt-6">
+          {startDate && endDate ? (
+            <EngagementMetricsPanel 
+              startDate={startDate} 
+              endDate={endDate} 
+            />
+          ) : (
+            <Card>
+              <CardContent>
+                <div className="text-center py-16">
+                  <h3 className="text-xl font-medium text-muted-foreground mb-2">
+                    Select a Date Range
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Choose start and end dates above to view engagement metrics
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
-          <TabPanel value={tabValue} index={1}>
-            {startDate && endDate ? (
-              <UserSessionsPanel 
-                startDate={startDate} 
-                endDate={endDate} 
-              />
-            ) : (
-              <Box textAlign="center" py={8}>
-                <Typography variant="h5" color="text.secondary" gutterBottom>
-                  Select a Date Range
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  Choose start and end dates above to view user sessions
-                </Typography>
-              </Box>
-            )}
-          </TabPanel>
-        </Box>
+        <TabsContent value="sessions" className="mt-6">
+          {startDate && endDate ? (
+            <UserSessionsPanel 
+              startDate={startDate} 
+              endDate={endDate} 
+            />
+          ) : (
+            <Card>
+              <CardContent>
+                <div className="text-center py-16">
+                  <h3 className="text-xl font-medium text-muted-foreground mb-2">
+                    Select a Date Range
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Choose start and end dates above to view user sessions
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
 
-        {/* Help Text */}
-        <Paper elevation={0} sx={{ mt: 4, p: 3, bgcolor: 'grey.50' }}>
-          <Typography variant="h6" gutterBottom>
-            📋 About Engagement Analytics
-          </Typography>
-          <Stack spacing={2}>
-            <Box>
-              <Typography variant="subtitle2" color="primary">
+      {/* Help Text */}
+      <Card className="bg-muted/50">
+        <CardContent>
+          <h3 className="text-lg font-semibold mb-4">📋 About Engagement Analytics</h3>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-medium text-primary mb-1">
                 Engagement Metrics
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
+              </h4>
+              <p className="text-sm text-muted-foreground">
                 Comprehensive analytics including user counts, session statistics, interaction patterns, 
                 and engagement level distribution. View average and median values to understand user behavior patterns.
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="subtitle2" color="primary">
+              </p>
+            </div>
+            <div>
+              <h4 className="font-medium text-primary mb-1">
                 User Sessions
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
+              </h4>
+              <p className="text-sm text-muted-foreground">
                 Detailed session-level data showing individual user journeys, event sequences, 
                 and screen navigation patterns. Expandable rows reveal complete session details.
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="subtitle2" color="primary">
+              </p>
+            </div>
+            <div>
+              <h4 className="font-medium text-primary mb-1">
                 Engagement Levels
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
+              </h4>
+              <p className="text-sm text-muted-foreground">
                 <strong>High:</strong> 20+ events per session • 
                 <strong> Medium:</strong> 5-19 events per session • 
                 <strong> Low:</strong> Less than 5 events per session
-              </Typography>
-            </Box>
-          </Stack>
-        </Paper>
-      </Box>
-    </Container>
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

@@ -14,21 +14,15 @@ import {
   MarkerType,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Alert, AlertDescription } from '../ui/alert';
 import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Alert,
-  CircularProgress,
-  Button,
-  Chip
-} from '@mui/material';
-import {
-  AccountTree,
-  Visibility,
-  TouchApp
-} from '@mui/icons-material';
+  GitBranch,
+  Eye,
+  Clock,
+  Loader2
+} from 'lucide-react';
 
 interface ScreenFlowNode {
   id: string;
@@ -143,35 +137,33 @@ export const ScreenFlowVisualization: React.FC<ScreenFlowVisualizationProps> = (
       position: node.position,
       data: {
         label: (
-          <Box sx={{ p: 2, minWidth: 150 }}>
-            <Typography variant="subtitle2" fontWeight="bold" textAlign="center">
+          <div className="p-4 min-w-[150px]">
+            <p className="font-semibold text-center text-sm mb-2">
               {node.screenName}
-            </Typography>
-            <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              <Chip 
-                size="small" 
-                label={`${node.visitCount} visits`}
-                color="primary"
-                icon={<Visibility />}
-              />
-              <Chip 
-                size="small" 
-                label={`${node.averageDuration}s avg`}
-                color="secondary"
-                icon={<TouchApp />}
-              />
-              <Chip 
-                size="small" 
-                label={`${node.exitRate}% exit`}
-                color={node.exitRate > 25 ? 'error' : 'success'}
-              />
-            </Box>
-          </Box>
+            </p>
+            <div className="flex flex-col gap-1">
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-xs rounded">
+                <Eye className="h-3 w-3" />
+                {node.visitCount} visits
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
+                <Clock className="h-3 w-3" />
+                {node.averageDuration}s avg
+              </span>
+              <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded ${
+                node.exitRate > 25 
+                  ? 'bg-red-100 text-red-700' 
+                  : 'bg-green-100 text-green-700'
+              }`}>
+                {node.exitRate}% exit
+              </span>
+            </div>
+          </div>
         )
       },
       style: {
         background: '#ffffff',
-        border: '2px solid #667eea',
+        border: '2px solid hsl(var(--primary))',
         borderRadius: 8,
         width: 180,
         fontSize: 12,
@@ -231,55 +223,62 @@ export const ScreenFlowVisualization: React.FC<ScreenFlowVisualizationProps> = (
   };
 
   return (
-    <Box>
-      <Typography variant="h5" gutterBottom>
-        🌊 Screen Flow Analysis
-      </Typography>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold tracking-tight">🌊 Screen Flow Analysis</h2>
 
       {/* Load Data Button */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                Onboarding Screen Flow
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Visualize user journey paths through onboarding screens
-              </Typography>
-            </Box>
-            <Button
-              variant="contained"
-              onClick={loadScreenFlow}
-              disabled={loading}
-              startIcon={loading ? <CircularProgress size={20} /> : <AccountTree />}
-            >
-              {loading ? 'Analyzing...' : 'Analyze Screen Flow'}
-            </Button>
-          </Box>
+      <Card>
+        <CardContent className="flex justify-between items-center p-6">
+          <div>
+            <h3 className="text-lg font-semibold mb-1">
+              Onboarding Screen Flow
+            </h3>
+            <p className="text-muted-foreground text-sm">
+              Visualize user journey paths through onboarding screens
+            </p>
+          </div>
+          <Button
+            onClick={loadScreenFlow}
+            disabled={loading}
+            className="flex items-center gap-2"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <GitBranch className="h-4 w-4" />
+                Analyze Screen Flow
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
 
       {/* Error Display */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
+        <Alert variant="destructive">
+          <AlertDescription className="flex justify-between items-center">
+            <span>{error}</span>
+            <Button variant="ghost" size="sm" onClick={() => setError(null)}>×</Button>
+          </AlertDescription>
         </Alert>
       )}
 
       {/* Flow Visualization */}
       {flowData && (
         <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              User Flow Diagram
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          <CardHeader>
+            <CardTitle>User Flow Diagram</CardTitle>
+            <p className="text-sm text-muted-foreground">
               Interactive flow diagram showing user progression through onboarding screens.
               Thicker arrows indicate higher traffic volume.
-            </Typography>
-            
-            <Box sx={{ height: 500, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[500px] border rounded border-border">
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -292,28 +291,28 @@ export const ScreenFlowVisualization: React.FC<ScreenFlowVisualizationProps> = (
                 <Controls />
                 <MiniMap 
                   style={{
-                    background: '#f5f5f5',
-                    border: '1px solid #ddd'
+                    background: 'hsl(var(--muted))',
+                    border: '1px solid hsl(var(--border))'
                   }}
                 />
                 <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
               </ReactFlow>
-            </Box>
+            </div>
 
-            <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              <Box display="flex" alignItems="center" gap={1}>
-                <Box sx={{ width: 4, height: 20, bgcolor: '#4caf50', borderRadius: 1 }} />
-                <Typography variant="caption">High Conversion (&gt;70%)</Typography>
-              </Box>
-              <Box display="flex" alignItems="center" gap={1}>
-                <Box sx={{ width: 4, height: 20, bgcolor: '#ff9800', borderRadius: 1 }} />
-                <Typography variant="caption">Medium Conversion (50-70%)</Typography>
-              </Box>
-              <Box display="flex" alignItems="center" gap={1}>
-                <Box sx={{ width: 4, height: 20, bgcolor: '#f44336', borderRadius: 1 }} />
-                <Typography variant="caption">Low Conversion (&lt;50%)</Typography>
-              </Box>
-            </Box>
+            <div className="mt-4 flex gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-5 bg-green-600 rounded" />
+                <span className="text-xs text-muted-foreground">High Conversion (&gt;70%)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-5 bg-orange-600 rounded" />
+                <span className="text-xs text-muted-foreground">Medium Conversion (50-70%)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-5 bg-red-600 rounded" />
+                <span className="text-xs text-muted-foreground">Low Conversion (&lt;50%)</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -322,19 +321,19 @@ export const ScreenFlowVisualization: React.FC<ScreenFlowVisualizationProps> = (
       {!loading && !error && !flowData && (
         <Card>
           <CardContent>
-            <Box textAlign="center" py={6}>
-              <AccountTree sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
+            <div className="text-center py-12">
+              <GitBranch className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground mb-2">
                 Screen Flow Analysis
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
+              </h3>
+              <p className="text-sm text-muted-foreground">
                 Click "Analyze Screen Flow" to visualize user journey paths through onboarding screens
-              </Typography>
-            </Box>
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
-    </Box>
+    </div>
   );
 };
 

@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Alert
-} from '@mui/material';
+import { Info } from 'lucide-react';
+import { Card, CardContent } from '../components/ui/card';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { DateRangePicker } from '../components/common/DateRangePicker';
 import { UserJourneySearch } from '../components/journey/UserJourneySearch';
 
@@ -19,32 +15,35 @@ export const UserJourneys: React.FC = () => {
   };
 
   return (
-    <Box>
-      <Typography variant="h4" component="h1" gutterBottom>
-        👤 User Journey Analysis
-      </Typography>
-      <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 3 }}>
-        Search and analyze individual user journeys through the onboarding process
-      </Typography>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">👤 User Journey Analysis</h1>
+        <p className="text-muted-foreground mt-2">
+          Search and analyze individual user journeys through the onboarding process
+        </p>
+      </div>
 
       {/* Date Range Selection */}
-      <Card sx={{ mb: 3 }}>
+      <Card>
         <CardContent>
           <DateRangePicker onDateRangeChange={handleDateRangeChange} />
         </CardContent>
       </Card>
 
       {/* Instructions */}
-      <Alert severity="info" sx={{ mb: 3 }}>
-        <strong>How to use User Journey Search:</strong>
-        <br />
-        1. Select a date range above
-        <br />
-        2. Enter a user pseudo ID (partial matches work)
-        <br />
-        3. Browse found sessions and click for detailed analytics
-        <br />
-        4. View session timeline, engagement metrics, and user behavior patterns
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          <strong>How to use User Journey Search:</strong>
+          <br />
+          1. Select a date range above
+          <br />
+          2. Enter a user pseudo ID (partial matches work)
+          <br />
+          3. Browse found sessions and click for detailed analytics
+          <br />
+          4. View session timeline, engagement metrics, and user behavior patterns
+        </AlertDescription>
       </Alert>
 
       {/* User Journey Search */}
@@ -53,18 +52,18 @@ export const UserJourneys: React.FC = () => {
       ) : (
         <Card>
           <CardContent>
-            <Box textAlign="center" py={6}>
-              <Typography variant="h6" color="text.secondary" gutterBottom>
+            <div className="text-center py-12">
+              <h3 className="text-lg font-medium text-muted-foreground mb-2">
                 Select Date Range to Begin
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
+              </h3>
+              <p className="text-sm text-muted-foreground">
                 Choose a date range to start searching for user journeys
-              </Typography>
-            </Box>
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
-    </Box>
+    </div>
   );
 };
 

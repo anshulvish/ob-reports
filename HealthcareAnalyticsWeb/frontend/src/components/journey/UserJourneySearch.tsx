@@ -1,28 +1,15 @@
 import React, { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  Button,
-  Box,
-  Grid,
-  Alert,
-  CircularProgress,
-  List,
-  ListItem,
-  ListItemText,
-  Chip,
-  Divider,
-  Stack
-} from '@mui/material';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Alert, AlertDescription } from '../ui/alert';
 import {
   Search,
-  Person,
-  Timeline,
-  AccessTime,
-  Visibility
-} from '@mui/icons-material';
+  User,
+  Activity,
+  Clock,
+  Eye,
+  Loader2
+} from 'lucide-react';
 import { format } from 'date-fns';
 
 interface UserJourney {
@@ -100,10 +87,10 @@ export const UserJourneySearch: React.FC<UserJourneySearchProps> = ({
 
   const getEngagementColor = (level: string) => {
     switch (level.toLowerCase()) {
-      case 'high': return 'success';
-      case 'medium': return 'warning';
-      case 'low': return 'error';
-      default: return 'default';
+      case 'high': return 'bg-green-100 text-green-800';
+      case 'medium': return 'bg-orange-100 text-orange-800';
+      case 'low': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -114,243 +101,227 @@ export const UserJourneySearch: React.FC<UserJourneySearchProps> = ({
   };
 
   return (
-    <Box>
-      <Typography variant="h5" gutterBottom>
-        🔍 User Journey Search
-      </Typography>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold tracking-tight">🔍 User Journey Search</h2>
 
       {/* Search Interface */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={8}>
-              <TextField
-                fullWidth
-                label="Search by User ID or Email"
-                placeholder="Enter user pseudo ID or email address"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={handleKeyPress}
-                InputProps={{
-                  startAdornment: <Search sx={{ color: 'action.active', mr: 1 }} />
-                }}
-                helperText="Search within selected date range"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
+      <Card>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+            <div className="sm:col-span-3">
+              <label htmlFor="search" className="block text-sm font-medium mb-2">
+                Search by User ID or Email
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  id="search"
+                  type="text"
+                  className="w-full pl-10 pr-4 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="Enter user pseudo ID or email address"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Search within selected date range
+              </p>
+            </div>
+            <div>
               <Button
-                fullWidth
-                variant="contained"
+                className="w-full flex items-center gap-2"
                 onClick={searchUserJourneys}
                 disabled={loading || !searchTerm.trim()}
-                startIcon={loading ? <CircularProgress size={20} /> : <Search />}
               >
-                {loading ? 'Searching...' : 'Search Journeys'}
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-4 w-4" />
+                    Search Journeys
+                  </>
+                )}
               </Button>
-            </Grid>
-          </Grid>
+            </div>
+          </div>
 
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          <p className="text-sm text-muted-foreground">
             Date Range: {format(startDate, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}
-          </Typography>
+          </p>
         </CardContent>
       </Card>
 
       {/* Error Display */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
+        <Alert variant="destructive">
+          <AlertDescription className="flex justify-between items-center">
+            <span>{error}</span>
+            <Button variant="ghost" size="sm" onClick={() => setError(null)}>×</Button>
+          </AlertDescription>
         </Alert>
       )}
 
       {/* Search Results */}
       {userJourneys.length > 0 && (
-        <Grid container spacing={3}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Journey List */}
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Found {userJourneys.length} Session(s)
-                </Typography>
-                <List sx={{ maxHeight: 400, overflow: 'auto' }}>
-                  {userJourneys.map((journey, index) => (
-                    <React.Fragment key={`${journey.userPseudoId}-${journey.sessionId}`}>
-                      <ListItem
-                        button
-                        selected={selectedJourney?.sessionId === journey.sessionId}
-                        onClick={() => setSelectedJourney(journey)}
-                        sx={{ borderRadius: 1 }}
-                      >
-                        <ListItemText
-                          primary={
-                            <Box display="flex" alignItems="center" gap={1}>
-                              <Person fontSize="small" />
-                              <Typography variant="subtitle2">
-                                User: {journey.userPseudoId.slice(0, 12)}...
-                              </Typography>
-                            </Box>
-                          }
-                          secondary={
-                            <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
-                              <Chip
-                                size="small"
-                                label={journey.engagementLevel}
-                                color={getEngagementColor(journey.engagementLevel) as any}
-                              />
-                              <Typography variant="caption" color="text.secondary">
-                                {journey.eventCount} events • {formatDuration(journey.sessionDurationSeconds)}
-                              </Typography>
-                            </Stack>
-                          }
-                        />
-                      </ListItem>
-                      {index < userJourneys.length - 1 && <Divider />}
-                    </React.Fragment>
-                  ))}
-                </List>
-              </CardContent>
-            </Card>
-          </Grid>
+          <Card>
+            <CardHeader>
+              <CardTitle>Found {userJourneys.length} Session(s)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="max-h-96 overflow-auto space-y-2">
+                {userJourneys.map((journey, index) => (
+                  <div
+                    key={`${journey.userPseudoId}-${journey.sessionId}`}
+                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedJourney?.sessionId === journey.sessionId
+                        ? 'bg-accent border-primary'
+                        : 'hover:bg-muted/50'
+                    }`}
+                    onClick={() => setSelectedJourney(journey)}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <User className="h-4 w-4" />
+                      <span className="font-medium text-sm">
+                        User: {journey.userPseudoId.slice(0, 12)}...
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 text-xs rounded ${getEngagementColor(journey.engagementLevel)}`}>
+                        {journey.engagementLevel}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {journey.eventCount} events • {formatDuration(journey.sessionDurationSeconds)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Journey Details */}
-          <Grid item xs={12} md={6}>
-            {selectedJourney ? (
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Session Details
-                  </Typography>
-                  
-                  <Grid container spacing={2} sx={{ mb: 2 }}>
-                    <Grid item xs={6}>
-                      <Box textAlign="center">
-                        <Typography variant="h4" color="primary">
-                          {selectedJourney.eventCount}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Total Events
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box textAlign="center">
-                        <Typography variant="h4" color="success.main">
-                          {selectedJourney.uniqueEvents}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Unique Events
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box textAlign="center">
-                        <Typography variant="h4" color="warning.main">
-                          {selectedJourney.pageViews}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Page Views
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box textAlign="center">
-                        <Typography variant="h4" color="info.main">
-                          {selectedJourney.screenViews}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Screen Views
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
+          {selectedJourney ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Session Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-primary">
+                      {selectedJourney.eventCount}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Total Events
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-green-600">
+                      {selectedJourney.uniqueEvents}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Unique Events
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-orange-600">
+                      {selectedJourney.pageViews}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Page Views
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-blue-600">
+                      {selectedJourney.screenViews}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Screen Views
+                    </p>
+                  </div>
+                </div>
 
-                  <Divider sx={{ my: 2 }} />
-
-                  <Box>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Session Timeline
-                    </Typography>
-                    <Box display="flex" alignItems="center" gap={1} mb={1}>
-                      <AccessTime fontSize="small" color="action" />
-                      <Typography variant="body2">
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold mb-3">Session Timeline</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
                         Start: {format(new Date(selectedJourney.sessionStart), 'MMM dd, HH:mm:ss')}
-                      </Typography>
-                    </Box>
-                    <Box display="flex" alignItems="center" gap={1} mb={2}>
-                      <AccessTime fontSize="small" color="action" />
-                      <Typography variant="body2">
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
                         End: {format(new Date(selectedJourney.sessionEnd), 'MMM dd, HH:mm:ss')}
-                      </Typography>
-                    </Box>
+                      </span>
+                    </div>
                     
-                    <Box display="flex" alignItems="center" justifyContent="space-between">
-                      <Typography variant="body2" color="text.secondary">
+                    <div className="flex items-center justify-between pt-2">
+                      <span className="text-sm text-muted-foreground">
                         Total Duration:
-                      </Typography>
-                      <Chip 
-                        label={formatDuration(selectedJourney.sessionDurationSeconds)}
-                        size="small"
-                        color="primary"
-                      />
-                    </Box>
-                  </Box>
+                      </span>
+                      <span className="px-2 py-1 bg-primary/10 text-primary text-sm rounded">
+                        {formatDuration(selectedJourney.sessionDurationSeconds)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-                  <Divider sx={{ my: 2 }} />
-
-                  <Box>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Session Engagement
-                    </Typography>
-                    <Box display="flex" alignItems="center" justifyContent="space-between">
-                      <Typography variant="body2" color="text.secondary">
-                        Engagement Level:
-                      </Typography>
-                      <Chip 
-                        label={selectedJourney.engagementLevel}
-                        color={getEngagementColor(selectedJourney.engagementLevel) as any}
-                        size="small"
-                      />
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent>
-                  <Box textAlign="center" py={4}>
-                    <Timeline sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
-                      Select a Session
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Choose a session from the list to view detailed journey information
-                    </Typography>
-                  </Box>
-                </CardContent>
-              </Card>
-            )}
-          </Grid>
-        </Grid>
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold mb-3">Session Engagement</h4>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      Engagement Level:
+                    </span>
+                    <span className={`px-2 py-1 text-sm rounded ${getEngagementColor(selectedJourney.engagementLevel)}`}>
+                      {selectedJourney.engagementLevel}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Activity className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+                  <h3 className="text-lg font-medium text-muted-foreground mb-2">
+                    Select a Session
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Choose a session from the list to view detailed journey information
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Empty State */}
       {!loading && !error && userJourneys.length === 0 && searchTerm && (
         <Card>
           <CardContent>
-            <Box textAlign="center" py={4}>
-              <Person sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
+            <div className="text-center py-8">
+              <User className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground mb-2">
                 No User Journeys Found
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
+              </h3>
+              <p className="text-sm text-muted-foreground">
                 Try searching with a different user ID or adjust your date range
-              </Typography>
-            </Box>
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
-    </Box>
+    </div>
   );
 };
 

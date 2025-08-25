@@ -1,18 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Alert,
-  CircularProgress,
-  Stack,
-  Chip
-} from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { CalendarIcon, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { Button } from '../ui/button';
+import { Calendar } from '../ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Alert, AlertDescription } from '../ui/alert';
+import { cn } from '../../lib/utils';
 import { apiClient, DateRangeResponse } from '../../services/generated-api-client';
 
 interface DateRangePickerProps {
@@ -120,78 +113,137 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
   if (loading) {
     return (
-      <Box display="flex" alignItems="center" gap={2}>
-        <CircularProgress size={20} />
-        <Typography>Loading available date ranges...</Typography>
-      </Box>
+      <div className="flex items-center gap-2">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span className="text-sm">Loading available date ranges...</span>
+      </div>
     );
   }
 
   if (error) {
-    return <Alert severity="error">{error}</Alert>;
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
   }
 
   if (!dateRangeInfo?.available) {
-    return <Alert severity="warning">No data available for analysis</Alert>;
+    return (
+      <Alert>
+        <AlertDescription>No data available for analysis</AlertDescription>
+      </Alert>
+    );
   }
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box>
-        <Typography variant="h6" gutterBottom>
-          Select Date Range
-        </Typography>
-        
-        <Stack spacing={2}>
-          <Box>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Available data: {format(parseISO(dateRangeInfo.earliestDate!), 'MMM dd, yyyy')} to {format(parseISO(dateRangeInfo.latestDate!), 'MMM dd, yyyy')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {dateRangeInfo.totalDays} days • {dateRangeInfo.dailyTables} daily tables • {dateRangeInfo.intradayTables} intraday tables
-            </Typography>
-          </Box>
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Select Date Range</h3>
+        <div className="space-y-1">
+          <p className="text-sm text-muted-foreground">
+            Available data: {format(parseISO(dateRangeInfo.earliestDate!), 'MMM dd, yyyy')} to {format(parseISO(dateRangeInfo.latestDate!), 'MMM dd, yyyy')}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {dateRangeInfo.totalDays} days • {dateRangeInfo.dailyTables} daily tables • {dateRangeInfo.intradayTables} intraday tables
+          </p>
+        </div>
+      </div>
 
-          <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-            <Chip label="Last 7 days" onClick={() => setQuickRange(7)} size="small" />
-            <Chip label="Last 30 days" onClick={() => setQuickRange(30)} size="small" />
-            <Chip label="All available" onClick={() => {
-              const earliest = parseISO(dateRangeInfo.earliestDate!);
-              const latest = parseISO(dateRangeInfo.latestDate!);
-              setStartDate(earliest);
-              setEndDate(latest);
-              onDateRangeChange(earliest, latest);
-            }} size="small" />
-          </Stack>
-          
-          <Stack direction="row" spacing={2}>
-            <DatePicker
-              label="Start Date"
-              value={startDate}
-              onChange={handleStartDateChange}
-              shouldDisableDate={isDateDisabled}
-              disabled={disabled}
-              slots={{ textField: TextField }}
-            />
-            
-            <DatePicker
-              label="End Date"
-              value={endDate}
-              onChange={handleEndDateChange}
-              shouldDisableDate={isDateDisabled}
-              disabled={disabled}
-              slots={{ textField: TextField }}
-            />
-          </Stack>
-          
-          {getDateRangeSummary() && (
-            <Typography variant="body2" color="text.secondary">
-              {getDateRangeSummary()}
-            </Typography>
-          )}
-        </Stack>
-      </Box>
-    </LocalizationProvider>
+      <div className="flex flex-wrap gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setQuickRange(7)}
+        >
+          Last 7 days
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setQuickRange(30)}
+        >
+          Last 30 days
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => {
+            const earliest = parseISO(dateRangeInfo.earliestDate!);
+            const latest = parseISO(dateRangeInfo.latestDate!);
+            setStartDate(earliest);
+            setEndDate(latest);
+            onDateRangeChange(earliest, latest);
+          }}
+        >
+          All available
+        </Button>
+      </div>
+      
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <label className="text-sm font-medium mb-2 block">Start Date</label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !startDate && "text-muted-foreground"
+                )}
+                disabled={disabled}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {startDate ? format(startDate, "PPP") : "Pick a date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={startDate || undefined}
+                onSelect={(date) => handleStartDateChange(date || null)}
+                disabled={(date) => isDateDisabled(date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        
+        <div className="flex-1">
+          <label className="text-sm font-medium mb-2 block">End Date</label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !endDate && "text-muted-foreground"
+                )}
+                disabled={disabled}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {endDate ? format(endDate, "PPP") : "Pick a date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={endDate || undefined}
+                onSelect={(date) => handleEndDateChange(date || null)}
+                disabled={(date) => isDateDisabled(date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+      
+      {getDateRangeSummary() && (
+        <p className="text-sm text-muted-foreground">
+          {getDateRangeSummary()}
+        </p>
+      )}
+    </div>
   );
 };
 
