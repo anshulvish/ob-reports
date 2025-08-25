@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { ApiResponse, AnalysisRequest, AnalyticsQueryRequest, AnalyticsQueryResponse } from '../types/api';
+import { AnalysisRequest, AnalyticsQueryRequest, AnalyticsQueryResponse } from '../types/api';
 import { EngagementAnalysisResult } from '../types/engagement';
 import { UserJourney } from '../types/journey';
 import { ScreenFlowAnalysis } from '../types/screenFlow';

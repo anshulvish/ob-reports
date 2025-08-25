@@ -17,7 +17,7 @@ import {
 } from '@mui/icons-material';
 import { apiClient } from '../services/generated-api-client';
 import { DateRangePicker } from '../components/common/DateRangePicker';
-import { SimpleEngagementPanel } from '../components/engagement/SimpleEngagementPanel';
+import { EngagementMetricsPanel } from '../components/engagement/EngagementMetricsPanel';
 
 interface HealthStatus {
   service: string;
@@ -127,7 +127,7 @@ export const Dashboard: React.FC = () => {
         {/* Engagement Analytics */}
         {startDate && endDate && (
           <Grid item xs={12}>
-            <SimpleEngagementPanel startDate={startDate} endDate={endDate} />
+            <EngagementMetricsPanel startDate={startDate} endDate={endDate} />
           </Grid>
         )}
 
@@ -234,10 +234,10 @@ export const Dashboard: React.FC = () => {
                 <Button variant="outlined" href="/diagnostics">
                   System Diagnostics
                 </Button>
-                <Button variant="outlined" disabled>
+                <Button variant="outlined" href="/user-journeys">
                   Search User Journeys
                 </Button>
-                <Button variant="outlined" disabled>
+                <Button variant="outlined" href="/screen-flow">
                   Analyze Screen Flow
                 </Button>
               </Box>
@@ -276,9 +276,9 @@ export const Dashboard: React.FC = () => {
                 </Grid>
                 <Grid item xs={6} sm={3}>
                   <Box textAlign="center">
-                    <WarningIcon color="warning" sx={{ fontSize: 40, mb: 1 }} />
+                    <CheckIcon color="success" sx={{ fontSize: 40, mb: 1 }} />
                     <Typography variant="body2" fontWeight="bold">Data Visualization</Typography>
-                    <Typography variant="caption" color="text.secondary">Coming Soon</Typography>
+                    <Typography variant="caption" color="text.secondary">Ready</Typography>
                   </Box>
                 </Grid>
               </Grid>

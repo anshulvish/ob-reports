@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   AppBar,
@@ -54,14 +55,20 @@ interface LayoutProps {
 }
 
 const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-  { text: 'Engagement Analysis', icon: <AnalyticsIcon />, path: '/engagement' },
-  { text: 'User Journeys', icon: <SearchIcon />, path: '/journeys' },
-  { text: 'Screen Flow', icon: <FlowIcon />, path: '/flow' },
-  { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+  { text: 'Dashboard', icon: <DashboardIcon />, path: '/', disabled: false },
+  { text: 'System Diagnostics', icon: <AnalyticsIcon />, path: '/diagnostics', disabled: false },
+  { text: 'User Journeys', icon: <SearchIcon />, path: '/user-journeys', disabled: false },
+  { text: 'Screen Flow', icon: <FlowIcon />, path: '/screen-flow', disabled: false },
 ];
 
 export const Layout: React.FC<LayoutProps> = ({ children, title = 'Aya Healthcare Analytics' }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -99,7 +106,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title = 'Aya Healthcar
         >
           <Toolbar>
             <Typography variant="h6" noWrap sx={{ color: 'white', fontWeight: 'bold' }}>
-              🏥 Aya Healthcare Analytics
+              🏥 Aya Healthcare
             </Typography>
           </Toolbar>
           <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)' }} />
@@ -107,10 +114,22 @@ export const Layout: React.FC<LayoutProps> = ({ children, title = 'Aya Healthcar
             {menuItems.map((item) => (
               <ListItem key={item.text} disablePadding>
                 <ListItemButton
+                  selected={location.pathname === item.path}
+                  disabled={item.disabled}
+                  onClick={() => !item.disabled && handleNavigate(item.path)}
                   sx={{
                     color: 'white',
                     '&:hover': {
                       backgroundColor: 'rgba(255,255,255,0.1)',
+                    },
+                    '&.Mui-selected': {
+                      backgroundColor: 'rgba(255,255,255,0.2)',
+                      '&:hover': {
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                      },
+                    },
+                    '&.Mui-disabled': {
+                      opacity: 0.5,
                     },
                   }}
                 >
