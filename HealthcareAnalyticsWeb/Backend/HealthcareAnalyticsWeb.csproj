@@ -13,6 +13,11 @@
     
     <!-- Web API -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0" />
+    <PackageReference Include="NSwag.AspNetCore" Version="14.5.0" />
+    <PackageReference Include="NSwag.MSBuild" Version="14.5.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" />
     
@@ -33,5 +38,10 @@
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
     <PackageReference Include="CsvHelper" Version="30.0.1" />
   </ItemGroup>
+
+  <!-- NSwag TypeScript Client Generation -->
+  <Target Name="GenerateTypeScriptClient" AfterTargets="Build">
+    <Exec Command="$(NSwagExe_Net80) run ../nswag.json" ContinueOnError="true" />
+  </Target>
 
 </Project>

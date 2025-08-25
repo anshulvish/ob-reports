@@ -18,6 +18,7 @@ public static class ServiceExtensions
 
         // BigQuery client service
         services.AddSingleton<IBigQueryClientService, BigQueryClientService>();
+        services.AddSingleton<IBigQueryTableService, BigQueryTableService>();
 
         // Caching
         services.AddMemoryCache();

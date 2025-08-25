@@ -11,17 +11,20 @@ namespace HealthcareAnalyticsWeb.Services;
 public class BigQueryService : IBigQueryService
 {
     private readonly IBigQueryClientService _bigQueryClientService;
+    private readonly IBigQueryTableService _tableService;
     private readonly ILogger<BigQueryService> _logger;
     private readonly ICacheService _cache;
     private readonly BigQueryConfig _config;
 
     public BigQueryService(
         IBigQueryClientService bigQueryClientService,
+        IBigQueryTableService tableService,
         ILogger<BigQueryService> logger,
         ICacheService cache,
         IOptions<BigQueryConfig> config)
     {
         _bigQueryClientService = bigQueryClientService;
+        _tableService = tableService;
         _logger = logger;
         _cache = cache;
         _config = config.Value;
