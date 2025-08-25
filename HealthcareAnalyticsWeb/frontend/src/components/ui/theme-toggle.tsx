@@ -12,7 +12,7 @@ export function ThemeToggle() {
       variant="outline"
       size="sm"
       onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-      className="h-9 w-9 p-0 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/20 hover:text-primary-foreground"
+      className="h-9 w-9 p-0 bg-muted hover:bg-muted/80 border-border text-foreground hover:text-foreground dark:bg-muted dark:hover:bg-muted/80 dark:border-border dark:text-foreground"
       title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
     >
       <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
