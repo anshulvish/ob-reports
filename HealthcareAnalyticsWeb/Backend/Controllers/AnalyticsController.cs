@@ -306,11 +306,14 @@ public class DateRangeInfo
 {
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
+    public int TotalDays { get; set; }
 }
 
 public class TableUsedInfo
 {
+    public string TableName { get; set; } = string.Empty;
     public string TableId { get; set; } = string.Empty;
+    public long RowCount { get; set; }
     public DateTime Date { get; set; }
     public bool IsIntraday { get; set; }
 }

@@ -33,8 +33,13 @@ export const Dashboard: React.FC = () => {
   const [bigQueryStatus, setBigQueryStatus] = useState<BigQueryStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  // Set default date range to last 30 days
+  const [startDate, setStartDate] = useState<Date | null>(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date;
+  });
+  const [endDate, setEndDate] = useState<Date | null>(() => new Date());
 
   const checkHealth = async () => {
     try {
@@ -60,6 +65,7 @@ export const Dashboard: React.FC = () => {
   }, []);
 
   const handleDateRangeChange = (start: Date, end: Date) => {
+    console.log('📅 Date range changed:', start.toDateString(), 'to', end.toDateString());
     setStartDate(start);
     setEndDate(end);
   };
@@ -76,22 +82,11 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'healthy':
-      case 'connected':
-        return 'success' as const;
-      case 'failed':
-        return 'error' as const;
-      default:
-        return 'warning' as const;
-    }
-  };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">🏥 Healthcare Analytics Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">📊 Onboarding Analytics Dashboard</h1>
         <p className="text-muted-foreground mt-2">
           System status and onboarding analytics overview
         </p>
@@ -133,7 +128,7 @@ export const Dashboard: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                🚀 Backend API Status
+                🚀 Analytics API Status
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -233,6 +228,41 @@ export const Dashboard: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Date Range Selection and Analytics */}
+        <Card>
+          <CardHeader>
+            <CardTitle>📅 Analytics Date Range</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DateRangePicker
+              initialStartDate={startDate || undefined}
+              initialEndDate={endDate || undefined}
+              onDateRangeChange={handleDateRangeChange}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Analytics Dashboard */}
+        {startDate && endDate ? (
+          <div>
+            <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                📊 Showing analytics for: {startDate.toDateString()} to {endDate.toDateString()}
+              </p>
+            </div>
+            <EngagementMetricsPanel startDate={startDate} endDate={endDate} />
+          </div>
+        ) : (
+          <div className="p-8 text-center bg-muted rounded-lg">
+            <p className="text-muted-foreground">
+              📅 Select a date range above to view analytics charts
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Debug: startDate={startDate?.toString() || 'null'}, endDate={endDate?.toString() || 'null'}
+            </p>
+          </div>
+        )}
 
         {/* Feature Status */}
         <Card>

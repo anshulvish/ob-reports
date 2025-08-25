@@ -7,6 +7,10 @@ import {
   Eye,
   Loader2
 } from 'lucide-react';
+import { DeviceChart } from '../charts/DeviceChart';
+import { StageProgressionChart } from '../charts/StageProgressionChart';
+import { useDeviceAnalytics } from '../../hooks/useDeviceAnalytics';
+import { useStageProgression } from '../../hooks/useStageProgression';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
@@ -25,6 +29,7 @@ import {
   Filler
 } from 'chart.js';
 import { format } from 'date-fns';
+import { getDefaultChartOptions } from '../../utils/chartDefaults';
 
 // Register Chart.js components
 ChartJS.register(
@@ -86,6 +91,26 @@ export const EngagementMetricsPanel: React.FC<EngagementMetricsPanelProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Device analytics
+  const { data: deviceData, isLoading: deviceLoading, error: deviceError } = useDeviceAnalytics({
+    startDate,
+    endDate
+  });
+  
+  console.log('🔧 Device Analytics:', { deviceLoading, deviceError, hasData: !!deviceData });
+
+  // Stage progression analytics
+  const { data: stageData, isLoading: stageLoading, error: stageError } = useStageProgression({
+    startDate,
+    endDate
+  });
+  
+  console.log('🔧 Stage Progression:', { stageLoading, stageError, hasData: !!stageData });
+  
+  // Debug logging
+  console.log('🎨 Rendering Device Analytics section');
+  console.log('🎨 Rendering Stage Progression section');
+
   useEffect(() => {
     if (startDate && endDate) {
       fetchEngagementMetrics();
@@ -108,7 +133,7 @@ export const EngagementMetricsPanel: React.FC<EngagementMetricsPanelProps> = ({
       setMetrics(data.metrics);
     } catch (err: any) {
       console.error('Failed to fetch engagement metrics:', err);
-      setError(err.message || 'Failed to fetch engagement metrics');
+      setError(err instanceof Error ? err.message : 'Failed to fetch engagement metrics');
     } finally {
       setLoading(false);
     }
@@ -377,15 +402,17 @@ export const EngagementMetricsPanel: React.FC<EngagementMetricsPanelProps> = ({
                 <Doughnut 
                   data={distributionChartData}
                   options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    ...getDefaultChartOptions(),
                     plugins: {
+                      ...getDefaultChartOptions().plugins,
                       legend: {
-                        position: 'bottom',
+                        ...getDefaultChartOptions().plugins.legend,
+                        position: 'bottom' as const,
                       },
                       tooltip: {
+                        ...getDefaultChartOptions().plugins.tooltip,
                         callbacks: {
-                          label: function(context) {
+                          label: function(context: any) {
                             const total = context.dataset.data.reduce((a: any, b: any) => a + b, 0);
                             const percentage = ((context.parsed / total) * 100).toFixed(1);
                             return `${context.label}: ${context.parsed} users (${percentage}%)`;
@@ -401,6 +428,185 @@ export const EngagementMetricsPanel: React.FC<EngagementMetricsPanelProps> = ({
         </Card>
       </div>
 
+      {/* Device Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>📱 Device Types</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {deviceLoading ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : deviceError ? (
+              <Alert className="mt-4">
+                <AlertDescription>
+                  Failed to load device data: {deviceError instanceof Error ? deviceError.message : 'Unknown error'}
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <DeviceChart 
+                data={deviceData?.deviceMetrics || null} 
+                type="device" 
+                chartType="doughnut" 
+                height={200} 
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>💻 Operating Systems</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {deviceLoading ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : deviceError ? (
+              <Alert className="mt-4">
+                <AlertDescription>
+                  Failed to load OS data
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <DeviceChart 
+                data={deviceData?.deviceMetrics || null} 
+                type="os" 
+                chartType="bar" 
+                height={200} 
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>🌐 Browsers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {deviceLoading ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : deviceError ? (
+              <Alert className="mt-4">
+                <AlertDescription>
+                  Failed to load browser data
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <DeviceChart 
+                data={deviceData?.deviceMetrics || null} 
+                type="browser" 
+                chartType="bar" 
+                height={200} 
+              />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Stage Progression Analytics */}
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>🏁 User Progression Funnel</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {stageLoading ? (
+                <div className="flex items-center justify-center h-[250px]">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : stageError ? (
+                <Alert className="mt-4">
+                  <AlertDescription>
+                    Failed to load stage progression data: {stageError instanceof Error ? stageError.message : 'Unknown error'}
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <StageProgressionChart 
+                  data={stageData?.stageMetrics || null} 
+                  chartType="funnel" 
+                  height={250} 
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>📈 Stage Retention Rates</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {stageLoading ? (
+                <div className="flex items-center justify-center h-[250px]">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : stageError ? (
+                <Alert className="mt-4">
+                  <AlertDescription>
+                    Failed to load retention data
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <StageProgressionChart 
+                  data={stageData?.stageMetrics || null} 
+                  chartType="retention" 
+                  height={250} 
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Stage Summary Stats */}
+        {stageData?.stageMetrics && (
+          <Card>
+            <CardHeader>
+              <CardTitle>📊 Stage Progression Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-primary">
+                    {stageData.stageMetrics.totalUsers.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Total Users</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-600">
+                    {stageData.stageMetrics.completedUsers.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Completed</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-blue-600">
+                    {stageData.stageMetrics.completionRate.toFixed(1)}%
+                  </p>
+                  <p className="text-sm text-muted-foreground">Completion Rate</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-purple-600">
+                    {stageData.stageMetrics.averageStagesVisited.toFixed(1)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Avg Stages Visited</p>
+                </div>
+              </div>
+
+              <StageProgressionChart 
+                data={stageData.stageMetrics} 
+                chartType="dropoff" 
+                height={200} 
+              />
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
       {/* Comparison Chart */}
       <Card>
         <CardHeader>
@@ -412,19 +618,23 @@ export const EngagementMetricsPanel: React.FC<EngagementMetricsPanelProps> = ({
               <Bar 
                 data={comparisonChartData}
                 options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
+                  ...getDefaultChartOptions(),
                   plugins: {
+                    ...getDefaultChartOptions().plugins,
                     legend: {
-                      position: 'top',
+                      ...getDefaultChartOptions().plugins.legend,
+                      position: 'top' as const,
                     },
                   },
                   scales: {
+                    ...getDefaultChartOptions().scales,
                     y: {
+                      ...getDefaultChartOptions().scales.y,
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Count per User'
+                        text: 'Count per User',
+                        color: getDefaultChartOptions().plugins.legend.labels.color,
                       }
                     }
                   }

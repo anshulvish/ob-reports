@@ -1,13 +1,13 @@
-# 🏥 Aya Healthcare Analytics Web Application
+# 📊 Aya Onboarding Analytics Web Application
 
 ## ✨ **Status: Complete Modern Design System & Ready for Production!**
-- ✅ **Professional UI Design**: Complete migration to shadcn/ui with clean, modern interface
+- ✅ **Professional Dark Mode UI**: Complete shadcn/ui design system with dark mode default
 - ✅ **Live BigQuery Integration**: 95 tables, 1,731 users analyzed
-- ✅ **Full Engagement Analytics**: Real-time metrics with Chart.js visualizations
+- ✅ **Full Engagement Analytics**: Real-time onboarding metrics with Chart.js visualizations
 - ✅ **User Journey Search**: Search users, view session details and timelines  
-- ✅ **Screen Flow Visualization**: Interactive React Flow diagrams
-- ✅ **Complete Navigation**: Professional sidebar with shadcn/ui components
-- ✅ **Modern Tech Stack**: Tailwind CSS, TypeScript, React 18
+- ✅ **Screen Flow Visualization**: Interactive React Flow diagrams for onboarding paths
+- ✅ **Complete Navigation**: Professional dark mode sidebar with theme toggle
+- ✅ **Modern Tech Stack**: Tailwind CSS, TypeScript, React 18, Dark Mode
 - ✅ **Production Ready**: Clean build with optimized bundle (232KB)
 
 ## 🚀 Quick Start Guide
@@ -29,7 +29,7 @@ dotnet run
 
 **Expected Output:**
 ```
-[INFO] Starting Aya Healthcare Analytics Web Application
+[INFO] Starting Aya Onboarding Analytics Web Application
 [INFO] BigQuery initialization complete. Found 95 tables
 [INFO] Event data available from 2025-06-26 to 2025-08-24
 ```

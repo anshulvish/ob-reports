@@ -14,6 +14,7 @@ import {
   SidebarNav,
   SidebarNavItem,
 } from '../ui/sidebar';
+import { ThemeToggle } from '../ui/theme-toggle';
 
 
 interface LayoutProps {
@@ -41,7 +42,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title = 'Aya Healthcar
       {/* Sidebar */}
       <Sidebar>
         <SidebarHeader>
-          <h2 className="text-lg font-bold">🏥 Aya Healthcare</h2>
+          <h2 className="text-lg font-bold">📊 Aya Onboarding</h2>
         </SidebarHeader>
         <SidebarContent>
           <SidebarNav>
@@ -64,8 +65,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, title = 'Aya Healthcar
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-primary text-primary-foreground shadow-sm">
-          <div className="px-6 py-4">
+          <div className="px-6 py-4 flex items-center justify-between">
             <h1 className="text-xl font-semibold">{title}</h1>
+            <ThemeToggle />
           </div>
         </header>
 

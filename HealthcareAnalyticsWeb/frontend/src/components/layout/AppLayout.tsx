@@ -14,6 +14,7 @@ import {
   SidebarNav,
   SidebarNavItem,
 } from '../ui/sidebar';
+import { ThemeToggle } from '../ui/theme-toggle';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -72,9 +73,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           <div className="flex items-center space-x-4">
             <h1 className="text-xl font-semibold text-foreground">{title}</h1>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="h-2 w-2 rounded-full bg-accent"></div>
-            <span className="text-sm text-muted-foreground">Live Data</span>
+          <div className="flex items-center space-x-3">
+            <ThemeToggle />
+            <div className="flex items-center space-x-2">
+              <div className="h-2 w-2 rounded-full bg-accent"></div>
+              <span className="text-sm text-muted-foreground">Live Data</span>
+            </div>
           </div>
         </header>
 
