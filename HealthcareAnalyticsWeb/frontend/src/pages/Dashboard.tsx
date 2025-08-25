@@ -15,7 +15,9 @@ import {
   Error as ErrorIcon,
   Warning as WarningIcon
 } from '@mui/icons-material';
-import { apiService } from '../services/api';
+import { apiClient } from '../services/generated-api-client';
+import { DateRangePicker } from '../components/common/DateRangePicker';
+import { SimpleEngagementPanel } from '../components/engagement/SimpleEngagementPanel';
 
 interface HealthStatus {
   service: string;
@@ -38,16 +40,18 @@ export const Dashboard: React.FC = () => {
   const [bigQueryStatus, setBigQueryStatus] = useState<BigQueryStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   const checkHealth = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const health = await apiService.getHealth();
+      const health = await apiClient.getHealth();
       setHealthStatus(health);
       
-      const bigQuery = await apiService.testBigQuery();
+      const bigQuery = await apiClient.testBigQueryConnection();
       setBigQueryStatus(bigQuery);
       
     } catch (err: any) {
@@ -61,6 +65,11 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     checkHealth();
   }, []);
+
+  const handleDateRangeChange = (start: Date, end: Date) => {
+    setStartDate(start);
+    setEndDate(end);
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -106,6 +115,22 @@ export const Dashboard: React.FC = () => {
       )}
 
       <Grid container spacing={3}>
+        {/* Date Range Selection */}
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <DateRangePicker onDateRangeChange={handleDateRangeChange} />
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Engagement Analytics */}
+        {startDate && endDate && (
+          <Grid item xs={12}>
+            <SimpleEngagementPanel startDate={startDate} endDate={endDate} />
+          </Grid>
+        )}
+
         {/* API Health Status */}
         <Grid item xs={12} md={6}>
           <Card>
@@ -206,8 +231,8 @@ export const Dashboard: React.FC = () => {
                 >
                   {loading ? 'Checking...' : 'Refresh Status'}
                 </Button>
-                <Button variant="outlined" disabled>
-                  View Engagement Analysis
+                <Button variant="outlined" href="/diagnostics">
+                  System Diagnostics
                 </Button>
                 <Button variant="outlined" disabled>
                   Search User Journeys
@@ -244,9 +269,9 @@ export const Dashboard: React.FC = () => {
                 </Grid>
                 <Grid item xs={6} sm={3}>
                   <Box textAlign="center">
-                    <WarningIcon color="warning" sx={{ fontSize: 40, mb: 1 }} />
-                    <Typography variant="body2" fontWeight="bold">Dashboard UI</Typography>
-                    <Typography variant="caption" color="text.secondary">In Development</Typography>
+                    <CheckIcon color="success" sx={{ fontSize: 40, mb: 1 }} />
+                    <Typography variant="body2" fontWeight="bold">Date-Driven Analytics</Typography>
+                    <Typography variant="caption" color="text.secondary">Ready</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6} sm={3}>

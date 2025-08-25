@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { ApiResponse, AnalysisRequest } from '../types/api';
+import { ApiResponse, AnalysisRequest, AnalyticsQueryRequest, AnalyticsQueryResponse } from '../types/api';
 import { EngagementAnalysisResult } from '../types/engagement';
 import { UserJourney } from '../types/journey';
 import { ScreenFlowAnalysis } from '../types/screenFlow';
@@ -60,6 +60,24 @@ export const apiService = {
     return response.data;
   },
 
+  // BigQuery Tables
+  async getBigQueryTables(): Promise<any> {
+    const response = await apiClient.get('/bigquerytables');
+    return response.data;
+  },
+
+  async getAvailableDateRanges(): Promise<any> {
+    const response = await apiClient.get('/analytics/date-ranges');
+    return response.data;
+  },
+
+  // Analytics Queries
+  async executeAnalyticsQuery(request: AnalyticsQueryRequest): Promise<AnalyticsQueryResponse> {
+    const response = await apiClient.post('/analytics/query', request);
+    return response.data;
+  },
+
+  // Legacy endpoints (keeping for backward compatibility)
   // Engagement Analysis
   async getEngagementAnalysis(request: AnalysisRequest): Promise<EngagementAnalysisResult> {
     const response = await apiClient.post('/engagement/analysis', request);
