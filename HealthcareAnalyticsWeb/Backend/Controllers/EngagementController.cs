@@ -1373,6 +1373,49 @@ public class EngagementController : ControllerBase
 
         return string.Join("\nUNION ALL\n", tableQueries);
     }
+
+    private async Task<T> ExecuteQueryWithRetry<T>(
+        Func<Task<T>> queryFunc, 
+        List<TableInfo> originalTables, 
+        DateTime startDate, 
+        DateTime endDate, 
+        TableType tableType, 
+        Func<List<TableInfo>, Task<T>> retryFunc)
+    {
+        try
+        {
+            return await queryFunc();
+        }
+        catch (Exception ex) when (IsTableNotFoundError(ex))
+        {
+            _logger.LogWarning("Table not found error detected, refreshing table list and retrying. Error: {Error}", ex.Message);
+            
+            // Refresh the table list
+            await _tableService.RefreshTableListAsync();
+            
+            // Get updated tables for the same date range
+            var updatedTables = _tableService.GetTablesForDateRange(startDate, endDate, tableType);
+            
+            if (updatedTables.Count != originalTables.Count)
+            {
+                _logger.LogInformation("Table count changed from {OriginalCount} to {UpdatedCount} after refresh", 
+                    originalTables.Count, updatedTables.Count);
+            }
+            
+            // Retry with updated tables
+            return await retryFunc(updatedTables);
+        }
+    }
+
+    private static bool IsTableNotFoundError(Exception ex)
+    {
+        // Check for BigQuery table not found errors
+        var message = ex.Message?.ToLowerInvariant() ?? string.Empty;
+        return message.Contains("table") && 
+               (message.Contains("not found") || 
+                message.Contains("does not exist") ||
+                message.Contains("notfound"));
+    }
 }
 
 // Request/Response Models

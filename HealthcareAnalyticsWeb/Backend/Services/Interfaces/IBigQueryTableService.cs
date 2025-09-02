@@ -12,6 +12,7 @@ public interface IBigQueryTableService
     TableInfo? GetLatestUserTable();
     List<TableInfo> GetTablesForDateRange(DateTime startDate, DateTime endDate, TableType tableType);
     string BuildUnionQuery(List<TableInfo> tables, string selectClause, string whereClause = "");
+    Task RefreshTableListAsync();
 }
 
 public class TableInfo

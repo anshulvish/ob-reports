@@ -261,4 +261,9 @@ public class BigQueryTableService : IBigQueryTableService
 
         return string.Join("\nUNION ALL\n", tableQueries);
     }
+
+    public async Task RefreshTableListAsync()
+    {
+        await RefreshTableListAsync(force: true);
+    }
 }
