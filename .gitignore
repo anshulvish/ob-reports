@@ -192,3 +192,6 @@ Desktop.ini
 # JetBrains Rider
 .idea/
 *.sln.iml
+/.playwright-mcp/*
+/.claude/*
+.claude/
