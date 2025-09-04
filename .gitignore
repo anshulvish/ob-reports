@@ -181,6 +181,10 @@ _Pvt_Extensions
 # Package management
 packages-microsoft-prod.deb
 
+# React build output
+**/wwwroot/
+**/build/
+
 # macOS
 .DS_Store
 
