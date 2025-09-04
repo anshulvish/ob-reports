@@ -117,11 +117,6 @@ export const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Engagement Analytics */}
-        {startDate && endDate && (
-          <EngagementMetricsPanel startDate={startDate} endDate={endDate} />
-        )}
-
         {/* Health Status Cards */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* API Health Status */}
