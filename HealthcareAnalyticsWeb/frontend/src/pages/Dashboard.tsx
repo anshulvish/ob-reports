@@ -84,7 +84,7 @@ export const Dashboard: React.FC = () => {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">📊 Onboarding Analytics Dashboard</h1>
         <p className="text-muted-foreground mt-2">
@@ -112,7 +112,7 @@ export const Dashboard: React.FC = () => {
       <div className="grid gap-6">
         {/* Date Range Selection */}
         <Card>
-          <CardContent>
+          <CardContent className="pt-6">
             <DateRangePicker onDateRangeChange={handleDateRangeChange} />
           </CardContent>
         </Card>
@@ -224,19 +224,6 @@ export const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Date Range Selection and Analytics */}
-        <Card>
-          <CardHeader>
-            <CardTitle>📅 Analytics Date Range</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DateRangePicker
-              initialStartDate={startDate || undefined}
-              initialEndDate={endDate || undefined}
-              onDateRangeChange={handleDateRangeChange}
-            />
-          </CardContent>
-        </Card>
 
         {/* Analytics Dashboard */}
         {startDate && endDate ? (
