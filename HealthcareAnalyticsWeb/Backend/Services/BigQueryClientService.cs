@@ -3,6 +3,7 @@ using Google.Apis.Auth.OAuth2;
 using HealthcareAnalyticsWeb.Configuration;
 using HealthcareAnalyticsWeb.Services.Interfaces;
 using Microsoft.Extensions.Options;
+using System.Text;
 
 namespace HealthcareAnalyticsWeb.Services;
 
@@ -10,13 +11,15 @@ public class BigQueryClientService : IBigQueryClientService
 {
     private readonly BigQueryClient? _client;
     private readonly ILogger<BigQueryClientService> _logger;
+    private readonly IConfiguration _configuration;
 
     public bool IsAvailable => _client != null;
     public string StatusMessage { get; private set; }
 
-    public BigQueryClientService(IOptions<BigQueryConfig> config, ILogger<BigQueryClientService> logger)
+    public BigQueryClientService(IOptions<BigQueryConfig> config, ILogger<BigQueryClientService> logger, IConfiguration configuration)
     {
         _logger = logger;
+        _configuration = configuration;
         var bigQueryConfig = config.Value;
         StatusMessage = "Not configured";
 
@@ -24,7 +27,19 @@ public class BigQueryClientService : IBigQueryClientService
 
         try
         {
-            if (!string.IsNullOrEmpty(bigQueryConfig.ServiceAccountKeyPath))
+            GoogleCredential? credential = null;
+            
+            // First try to get credentials from Azure Key Vault (production)
+            var keyVaultKey = _configuration["bigquery-service-account-key"];
+            if (!string.IsNullOrEmpty(keyVaultKey))
+            {
+                _logger.LogInformation("Found BigQuery service account key in Key Vault, creating credential");
+                credential = GoogleCredential.FromJson(keyVaultKey);
+                StatusMessage = "Connected using Key Vault credentials";
+                _logger.LogInformation("BigQuery client created successfully using Key Vault credentials");
+            }
+            // Fallback to file-based credentials (development)
+            else if (!string.IsNullOrEmpty(bigQueryConfig.ServiceAccountKeyPath))
             {
                 // Auto-detect and convert path between Windows and WSL formats
                 var keyPath = ConvertPathForEnvironment(bigQueryConfig.ServiceAccountKeyPath);
@@ -36,9 +51,8 @@ public class BigQueryClientService : IBigQueryClientService
                 if (File.Exists(keyPath))
                 {
                     _logger.LogInformation("Service account key file found, creating BigQuery client");
-                    var credential = GoogleCredential.FromFile(keyPath);
-                    _client = BigQueryClient.Create(bigQueryConfig.ProjectId, credential);
-                    StatusMessage = "Connected using service account key";
+                    credential = GoogleCredential.FromFile(keyPath);
+                    StatusMessage = "Connected using service account key file";
                     _logger.LogInformation("BigQuery client created successfully using service account key");
                 }
                 else
@@ -49,9 +63,15 @@ public class BigQueryClientService : IBigQueryClientService
                     return;
                 }
             }
+            
+            // Create BigQuery client with credential or use default
+            if (credential != null)
+            {
+                _client = BigQueryClient.Create(bigQueryConfig.ProjectId, credential);
+            }
             else
             {
-                _logger.LogInformation("No service account key path configured, trying default credentials");
+                _logger.LogInformation("No service account key configured, trying default credentials");
                 // Try to use default credentials
                 _client = BigQueryClient.Create(bigQueryConfig.ProjectId);
                 StatusMessage = "Connected using default credentials";

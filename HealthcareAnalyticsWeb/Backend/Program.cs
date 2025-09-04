@@ -1,7 +1,26 @@
 using HealthcareAnalyticsWeb.Extensions;
 using Serilog;
+using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Azure Key Vault for production
+if (builder.Environment.IsProduction())
+{
+    var keyVaultName = "onbrdrp-devsand-wus-kv-1";
+    var keyVaultUri = new Uri($"https://{keyVaultName}.vault.azure.net/");
+    
+    builder.Configuration.AddAzureKeyVault(
+        keyVaultUri,
+        new DefaultAzureCredential(new DefaultAzureCredentialOptions
+        {
+            // Use managed identity in production
+            ExcludeVisualStudioCredential = true,
+            ExcludeVisualStudioCodeCredential = true,
+            ExcludeAzureCliCredential = false, // Keep for deployment
+            ExcludeInteractiveBrowserCredential = true
+        }));
+}
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -61,10 +80,20 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Serve static files (React app)
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseCors("AllowReactApp");
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Map API controllers
 app.MapControllers();
+
+// Fallback to index.html for client-side routing
+app.MapFallbackToFile("index.html");
 
 try
 {

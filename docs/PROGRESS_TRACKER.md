@@ -3,16 +3,19 @@
 ## Project Overview
 Complete web-based analytics platform for onboarding data with BigQuery integration, featuring modern shadcn/ui design system and dark mode interface.
 
-## 🎉 **PROJECT STATUS: PRODUCTION READY WITH WORLD-CLASS TESTING ECOSYSTEM**
+## 🎉 **PROJECT STATUS: ENTERPRISE-READY WITH AZURE PRODUCTION DEPLOYMENT**
 
-**Last Updated:** August 25, 2025  
+**Last Updated:** September 4, 2025  
 **Build Status:** ✅ Successfully Building  
-**Bundle Size:** 232KB (optimized)  
+**Bundle Size:** 237KB (optimized with Chart.js)  
 **UI Framework:** shadcn/ui + Tailwind CSS  
 **Theme:** Dark Mode Default with Toggle  
-**Development Environment:** WSL self-testing with MCP integration  
+**Architecture:** Single-Domain Serving (Frontend + Backend unified)  
+**Development Environment:** Cross-platform WSL/Windows with automatic path conversion  
+**Production Deployment:** Azure App Service with Key Vault integration  
 **Visual Testing:** Playwright MCP operational  
-**Database Access:** BigQuery MCP operational
+**Database Access:** BigQuery MCP operational  
+**Security:** Azure Key Vault credential management
 
 ### ✅ Completed Tasks
 
@@ -78,12 +81,13 @@ Complete web-based analytics platform for onboarding data with BigQuery integrat
 - [x] **User-driven date selection** - Complete architectural shift
 
 #### Current Data Discovery Results
-- **95 total tables discovered** in onboarding-prod-dfa00:analytics_481869887
-- **47 event tables** (events_YYYYMMDD format)
+- **116 total tables discovered** in onboarding-prod-dfa00:analytics_481869887
+- **59 event tables** (events_YYYYMMDD format)
 - **1 intraday table** (events_intraday_YYYYMMDD format)  
-- **47 user tables** (pseudonymous_users_YYYYMMDD format)
-- **Date range**: 2025-06-26 to 2025-08-24
+- **57 user tables** (pseudonymous_users_YYYYMMDD format)
+- **Date range**: 2025-06-26 to 2025-09-04
 - **User-driven queries working**: Successfully tested sample, engagement, and user journey queries
+- **Automatic error recovery**: Table refresh on "Table not found" errors prevents overnight failures
 
 ### ✅ **Phase 4 - Advanced Analytics & Chart Theming Complete**
 
@@ -270,43 +274,114 @@ Complete web-based analytics platform for onboarding data with BigQuery integrat
 - ✅ Service dependency injection issues
 
 ## Environment Details
-- **Development**: WSL2 on Windows (see [DEVELOPMENT_ENVIRONMENT.md](DEVELOPMENT_ENVIRONMENT.md))
-- **Backend Port**: https://localhost:64547 (when run from Windows)
-- **Frontend Port**: http://localhost:3000 (when run from Windows)
+- **Development**: Cross-platform WSL2/Windows with automatic path conversion
+- **Backend Port**: http://localhost:9000 (standardized across all environments)
+- **Frontend Port**: http://localhost:3000 (development mode only)
+- **Production Local**: http://localhost:9000 (single server serves both frontend + API)
+- **Azure Production**: https://onbrdrp-devsand-wus-app-1.azurewebsites.net
 - **BigQuery Project**: onboarding-prod-dfa00
 - **Dataset**: analytics_481869887  
-- **Service Account**: Configured with full BigQuery access
-- **⚠️ Important**: Applications must be run from Windows, not WSL
+- **Service Account**: File-based (dev) or Azure Key Vault (production)
+- **✅ Cross-Platform**: Runs on both Windows and WSL with automatic path detection
 
 ### 🎯 **SUCCESS METRICS ACHIEVED**
 
 - ✅ **Build Success Rate**: 100%
 - ✅ **TypeScript Coverage**: 100%  
 - ✅ **Component Migration**: 100% (Material-UI → shadcn/ui)
-- ✅ **Data Integration**: 95 BigQuery tables connected
+- ✅ **Data Integration**: 116 BigQuery tables connected (59 event, 57 user)
 - ✅ **User Coverage**: 1,731 users analyzed
-- ✅ **Bundle Size**: Optimized to 232KB
+- ✅ **Bundle Size**: Optimized to 237KB
 - ✅ **Accessibility**: WCAG compliant components
 - ✅ **Dark Mode**: Fully implemented with toggle
-- ✅ **Production Ready**: Complete deployment-ready build
+- ✅ **Azure Integration**: Complete Key Vault and App Service deployment
+- ✅ **Cross-Platform**: Automatic Windows/WSL path conversion
+- ✅ **Error Recovery**: Self-healing BigQuery table refresh
+- ✅ **Single Domain**: Unified frontend/backend architecture
+- ✅ **Enterprise Ready**: Production deployment with managed identity
 
 ### 🚀 **DEPLOYMENT STATUS**
 
 #### Development Environment ✅
-- **Frontend Dev Server**: `npm start` on localhost:3000
-- **Backend API**: `dotnet run` on localhost:64547  
-- **Database**: Direct BigQuery connection
-- **Hot Reload**: Full development workflow
+- **Cross-Platform**: Works on both Windows and WSL with automatic path conversion
+- **Development Mode**: Frontend dev server (localhost:3000) + Backend API (localhost:9000)
+- **Production Mode**: Single server (localhost:9000) serves both frontend + API
+- **Database**: Direct BigQuery connection with automatic error recovery
+- **Hot Reload**: Full React development workflow
 
-#### Production Build ✅
-- **Optimized Bundle**: 232KB gzipped
-- **Static Assets**: Ready for CDN deployment
-- **Environment Config**: Configurable API endpoints
-- **Performance**: Lighthouse-ready optimization
+#### Azure Production Deployment ✅
+- **App Service**: onbrdrp-devsand-wus-app-1 (single resource for frontend + backend)
+- **Key Vault**: onbrdrp-devsand-wus-kv-1 (secure BigQuery credential storage)
+- **Managed Identity**: System identity for secure Key Vault access
+- **Bundle Size**: 237KB optimized build
+- **URL**: https://onbrdrp-devsand-wus-app-1.azurewebsites.net
+- **Environment**: Production configuration with Key Vault integration
+- **Deployment**: Automated scripts for complete deployment pipeline
 
 ---
 
 ## 🔄 **RECENT MAJOR UPDATES**
+
+### **🚀 September 4, 2025 - ENTERPRISE PRODUCTION DEPLOYMENT COMPLETE**
+
+#### Azure Cloud Integration ✅
+- ✅ **Azure Key Vault Integration** - Enterprise-grade credential management
+  - BigQueryClientService enhanced to support Key Vault credentials  
+  - Program.cs configured with Azure Key Vault for production environment
+  - DefaultAzureCredential with managed identity authentication
+  - Seamless fallback: Key Vault (production) → File-based (development)
+  
+- ✅ **Single-Domain Architecture** - Unified frontend and backend serving
+  - Frontend React app served from .NET backend (eliminates CORS issues)
+  - Program.cs configured with UseStaticFiles() and MapFallbackToFile() 
+  - Production build process copies React build to Backend/wwwroot
+  - Single deployment target: both frontend and API from same domain
+  
+- ✅ **Cross-Platform Development** - Automatic Windows/WSL path conversion
+  - BigQueryClientService detects runtime environment automatically
+  - Converts Windows paths (C:\) ↔ WSL paths (/mnt/c/) seamlessly
+  - No more manual configuration changes when switching environments
+  - Same appsettings.json works in both Windows and WSL execution
+
+#### Production Deployment System ✅
+- ✅ **Azure Deployment Scripts** - Complete automation for Azure App Service
+  - `configure-azure-managed-identity.ps1` - One-time Azure resource setup
+  - `upload-bigquery-key-to-keyvault.ps1` - Secure credential upload
+  - `deploy-to-azure.ps1` - Complete application deployment automation
+  - Target: Azure App Service `onbrdrp-devsand-wus-app-1`
+  - Key Vault: `onbrdrp-devsand-wus-kv-1`
+  
+- ✅ **Build System Enhancement** - Multi-mode deployment support
+  - `build-and-deploy.ps1` - Unified build script for React + .NET
+  - Development mode: Separate servers (localhost:3000 + localhost:9000)
+  - Production mode: Single server (localhost:9000 serves both)
+  - Azure mode: Deployed to https://onbrdrp-devsand-wus-app-1.azurewebsites.net
+
+#### Error Recovery & Reliability ✅
+- ✅ **Automatic Table Refresh** - Self-healing BigQuery integration
+  - ExecuteQueryWithRetry method in EngagementController
+  - Detects "Table not found" errors and automatically refreshes table list
+  - Prevents overnight failures from stale table discovery cache
+  - Retry mechanism for improved reliability
+  
+- ✅ **Enhanced Error Handling** - Production-ready error management
+  - IsTableNotFoundError helper method for precise error detection
+  - Comprehensive logging for debugging and monitoring
+  - Graceful fallbacks for all credential and connection scenarios
+
+#### Port Configuration Updates ✅
+- ✅ **Standardized Port Configuration** - Consistent localhost:9000 across all modes
+  - Development: Backend API on localhost:9000, Frontend dev server on localhost:3000
+  - Production Local: Unified server on localhost:9000 (frontend + API)
+  - Azure Production: https://onbrdrp-devsand-wus-app-1.azurewebsites.net
+  - Updated launchSettings.json for consistent local development
+
+#### Documentation Overhaul ✅
+- ✅ **Complete Documentation Update** - All docs reflect current architecture
+  - README.md: Added Azure deployment, single-domain architecture  
+  - SETUP_NOTES.md: Automatic path conversion, deployment scripts
+  - TESTING_INSTRUCTIONS.md: Three testing modes with step-by-step guides
+  - All documentation updated for localhost:9000 and Azure deployment
 
 ### **August 25, 2025 - Advanced Analytics & Chart Theming Resolution**
 - ✅ **Chart Text Color Fix** - Resolved black text visibility in dark mode
@@ -392,6 +467,27 @@ Complete web-based analytics platform for onboarding data with BigQuery integrat
 
 ---
 
-**🎉 The Aya Onboarding Analytics platform is COMPLETE and ready for production deployment!**
+**🎉 The Aya Onboarding Analytics platform is ENTERPRISE-READY with full Azure production deployment!**
 
-*Last Updated: 2025-08-25 - All Phases Complete, Production Ready*
+### 🌟 **ARCHITECTURAL ACHIEVEMENTS**
+
+#### From Development to Enterprise
+- **Started**: Local development with manual configuration
+- **Evolved**: Cross-platform development with automatic path conversion
+- **Achieved**: Enterprise Azure deployment with Key Vault security
+
+#### Key Innovations
+1. **Single-Domain Architecture**: Eliminated CORS complexity by serving frontend from backend
+2. **Automatic Path Conversion**: Seamless Windows/WSL development experience
+3. **Self-Healing Error Recovery**: Automatic BigQuery table refresh prevents overnight failures
+4. **Multi-Mode Deployment**: Development, production local, and Azure deployment modes
+5. **Enterprise Security**: Azure Key Vault credential management with managed identity
+
+#### Current Capabilities
+- **116 BigQuery Tables**: Real-time analytics from 1,731 users
+- **Cross-Platform Development**: Windows and WSL with automatic configuration
+- **Azure Production Ready**: Complete deployment automation with security best practices
+- **Self-Testing Ecosystem**: MCP integration for Playwright, BigQuery, and GitHub operations
+- **Professional UI**: shadcn/ui dark mode interface with Chart.js visualizations
+
+*Last Updated: 2025-09-04 - Enterprise Production Deployment Complete*

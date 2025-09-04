@@ -1,14 +1,26 @@
 # 📊 Aya Onboarding Analytics Web Application
 
-## ✨ **Status: Complete Modern Design System & Ready for Production!**
+## ✨ **Status: Production-Ready with Azure Deployment & Single-Domain Architecture**
 - ✅ **Professional Dark Mode UI**: Complete shadcn/ui design system with dark mode default
-- ✅ **Live BigQuery Integration**: 95 tables, 1,731 users analyzed
+- ✅ **Live BigQuery Integration**: 116 tables, 1,731 users analyzed with automatic error recovery
+- ✅ **Azure Key Vault Integration**: Secure credential management for production
+- ✅ **Single-Domain Serving**: Frontend served from .NET backend, eliminating CORS issues
+- ✅ **Cross-Platform Support**: Automatic Windows/WSL path conversion
 - ✅ **Full Engagement Analytics**: Real-time onboarding metrics with Chart.js visualizations
 - ✅ **User Journey Search**: Search users, view session details and timelines  
 - ✅ **Screen Flow Visualization**: Interactive React Flow diagrams for onboarding paths
-- ✅ **Complete Navigation**: Professional dark mode sidebar with theme toggle
-- ✅ **Modern Tech Stack**: Tailwind CSS, TypeScript, React 18, Dark Mode
-- ✅ **Production Ready**: Clean build with optimized bundle (232KB)
+- ✅ **Production Deployment**: Automated Azure App Service deployment with managed identity
+
+## 🏗️ Architecture Overview
+
+**Development**: Frontend and backend run separately for development convenience
+**Production**: Single .NET server serves both React frontend and API endpoints
+
+### Single-Domain Benefits
+- ✅ No CORS configuration needed
+- ✅ Simplified deployment to single Azure resource
+- ✅ Unified authentication and session management
+- ✅ Better performance with shared infrastructure
 
 ## 🚀 Quick Start Guide
 
@@ -17,34 +29,36 @@
 - Node.js 18+ and npm installed  
 - BigQuery service account key at: `C:\Anshul\Work\keys\onboarding-prod-dfa00-9a059d9f43b8.json`
 
-### ⚠️ Important Setup Note
-The BigQuery credentials are configured for **Windows execution**. The application automatically detects data from **2025-06-26 to 2025-08-24** with 95 tables discovered.
+### Option 1: Development Mode (Separate Servers)
 
-### Step 1: Start the Backend API
-
+**Step 1: Start the Backend API**
 ```bash
 cd HealthcareAnalyticsWeb/Backend
 dotnet run
 ```
-
-**Expected Output:**
-```
-[INFO] Starting Aya Onboarding Analytics Web Application
-[INFO] BigQuery initialization complete. Found 95 tables
-[INFO] Event data available from 2025-06-26 to 2025-08-24
-```
-
-The API will be available at: `https://localhost:64547`
-
-### Step 2: Start the Frontend
-
+**Step 2: Start the Frontend (in new terminal)**
 ```bash
 cd HealthcareAnalyticsWeb/frontend
 npm install  # if first time
 npm start
 ```
+- Backend API: http://localhost:9000/api/
+- Frontend: http://localhost:3000
 
-The frontend will be available at: `http://localhost:3000`
+### Option 2: Production Mode (Single Server)
+
+**Build and serve frontend from backend:**
+```bash
+# Build everything
+./build-and-deploy.ps1
+
+# Run single server (serves both frontend and API)
+cd Backend
+dotnet run
+```
+- **Full Application**: http://localhost:9000 (React frontend)
+- **API Endpoints**: http://localhost:9000/api/ (REST API)
+- **Swagger**: http://localhost:9000/swagger (development only)
 
 ## 🎨 **Modern Design System**
 
@@ -96,26 +110,75 @@ The frontend will be available at: `http://localhost:3000`
 - **Table Inspector**: View available tables and metadata
 - **Performance Metrics**: Query execution times
 
-## 📡 API Endpoints (Backend Testing)
+## 🚀 Azure Production Deployment
+
+### One-Time Setup
+
+**1. Configure Azure Resources**
+```powershell
+./configure-azure-managed-identity.ps1
+```
+This sets up:
+- System Managed Identity for App Service
+- Key Vault access policies for BigQuery credentials
+
+**2. Upload BigQuery Credentials**
+```powershell
+./upload-bigquery-key-to-keyvault.ps1
+```
+Uploads service account key to Azure Key Vault securely
+
+### Deploy to Azure
+
+```powershell
+./deploy-to-azure.ps1
+```
+
+**Production URL**: https://onbrdrp-devsand-wus-app-1.azurewebsites.net
+
+### Azure Architecture
+- **App Service**: `onbrdrp-devsand-wus-app-1` (single resource for frontend + backend)
+- **Key Vault**: `onbrdrp-devsand-wus-kv-1` (secure BigQuery credential storage)
+- **Managed Identity**: App Service uses system identity to access Key Vault
+- **Environment**: Production configuration with Key Vault integration
+
+## 🔄 Cross-Platform Development
+
+### Automatic Path Conversion
+The application automatically detects and converts BigQuery service account key paths:
+
+**Windows**: `C:\Anshul\Work\keys\onboarding-prod-dfa00-9a059d9f43b8.json`
+**WSL**: `/mnt/c/Anshul/Work/keys/onboarding-prod-dfa00-9a059d9f43b8.json`
+
+No manual configuration needed - the app detects the environment and converts paths automatically.
+
+### Environment-Specific Configuration
+- **Development**: File-based BigQuery credentials with automatic path conversion
+- **Production**: Azure Key Vault credentials with managed identity authentication
+- **Error Recovery**: Automatic table refresh on BigQuery "Table not found" errors
+
+## 📡 API Endpoints
 
 **Health & Status:**
-- `GET https://localhost:64547/api/Health` - System health
-- `GET https://localhost:64547/api/BigQueryTables` - Table discovery info
+- `GET /api/Health` - System health
+- `GET /api/BigQueryTables` - Table discovery info
 
 **Analytics:**
-- `GET https://localhost:64547/api/Analytics/date-ranges` - Available date ranges
-- `POST https://localhost:64547/api/Analytics/query` - Execute analytics queries
+- `GET /api/Analytics/date-ranges` - Available date ranges
+- `POST /api/Analytics/query` - Execute analytics queries
 
-**✅ Engagement (ALL FIXED & WORKING!):**
-- `POST https://localhost:64547/api/Engagement/metrics` - ✅ **LIVE** detailed engagement metrics  
-- `POST https://localhost:64547/api/Engagement/user-sessions` - ✅ **FIXED** user session details
+**Engagement Analytics:**
+- `POST /api/Engagement/metrics` - Detailed engagement metrics with automatic error recovery
+- `POST /api/Engagement/user-sessions` - User session details
+- `POST /api/Engagement/job-search-exposure` - Job search analytics
 
-**Test Data:**
-- `GET https://localhost:64547/api/test/TestBigQuery/test-connection` - BigQuery status
-- `GET https://localhost:64547/api/test/TestBigQuery/test-query?date=2025-08-24` - Sample query
+**Test Endpoints:**
+- `GET /api/test/TestBigQuery/test-connection` - BigQuery connection status
+- `GET /api/test/TestBigQuery/test-query` - Sample BigQuery test
 
-### 4. OpenAPI Documentation
-Visit `https://localhost:64547/swagger` for interactive API documentation
+### OpenAPI Documentation
+- **Development**: http://localhost:9000/swagger
+- **Production**: https://onbrdrp-devsand-wus-app-1.azurewebsites.net/swagger
 
 ## 🎯 Key Features to Test
 
@@ -151,37 +214,65 @@ Visit `https://localhost:64547/swagger` for interactive API documentation
 
 ## 🔧 Troubleshooting
 
-### Backend Issues
-- **Port conflicts**: Backend runs on https://localhost:64547 by default
-- **BigQuery errors**: Check service account key path in appsettings.Development.json
-- **WSL path issues**: Ensure key path uses `/mnt/c/` format
+### Development Issues
+- **Port conflicts**: Backend runs on http://localhost:9000 by default
+- **BigQuery errors**: Path conversion is automatic - check service account key exists
+- **Build errors**: Run `npm install` in frontend directory
 
-### Frontend Issues  
-- **CORS errors**: Backend already configured for localhost:3000
-- **API connection**: Check that backend is running on correct port
-- **Build errors**: Run `npm install` to ensure dependencies are current
+### Production Issues  
+- **Deployment fails**: Verify Azure CLI authentication (`az login`)
+- **Key Vault access**: Ensure managed identity has correct permissions
+- **BigQuery connection**: Check Key Vault secret `bigquery-service-account-key` exists
 
 ### Common Issues
-1. **"BigQuery client not available"**: Restart backend, check service account key
-2. **"No data available for date range"**: Use dates within 2025-06-26 to 2025-08-24
-3. **Loading indefinitely**: Check browser console for API errors
+1. **"BigQuery client not available"**: 
+   - Development: Check service account key file exists
+   - Production: Verify Key Vault secret and managed identity permissions
+2. **"Table not found" errors**: Application auto-refreshes table list and retries
+3. **Frontend 404 errors**: Ensure `build-and-deploy.ps1` was run to copy React build
+4. **CORS errors in development**: Backend configured for localhost:3000
+
+### Environment Detection
+The application automatically detects:
+- **WSL vs Windows** environment for path conversion
+- **Development vs Production** for credential source (file vs Key Vault)
+- **Table availability** and refreshes on errors
 
 ## 🎉 Success Indicators
 
-✅ **Backend Started**: Logs show "95 tables discovered"
-✅ **Frontend Loads**: Dashboard displays without errors  
-✅ **Date Picker Works**: Shows available range and validates selection
-✅ **Queries Execute**: Returns real BigQuery data with table metadata
-✅ **Data Displays**: Expandable tables show formatted results
-✅ **Type Safety**: No TypeScript errors in browser console
+### Development
+✅ **Backend Started**: Logs show "116 tables discovered"
+✅ **Path Conversion**: Automatic Windows/WSL path detection working
+✅ **Frontend Loads**: React app displays without errors
+✅ **API Integration**: All endpoints respond correctly
 
-## 📞 Next Steps
+### Production  
+✅ **Azure Deployment**: App Service shows healthy status
+✅ **Key Vault Integration**: BigQuery credentials loaded from Key Vault
+✅ **Managed Identity**: App Service can access Key Vault secrets
+✅ **Single Domain**: Both frontend and API serve from same URL
 
-After testing the current features, you can:
-1. **Explore the data**: Try different date ranges and query types
-2. **Check engagement metrics**: Test the new engagement analytics endpoints
-3. **Review visualizations**: See how BigQuery data is presented
-4. **Plan next features**: User journey flow diagrams and screen analysis
+## 🚀 Deployment Summary
+
+### Local Development
+```bash
+# Development mode (separate servers)
+cd Backend && dotnet run           # API: localhost:9000/api/
+cd frontend && npm start           # Frontend: localhost:3000
+
+# Production mode (single server)  
+./build-and-deploy.ps1            # Build React into Backend/wwwroot
+cd Backend && dotnet run           # Full app: localhost:9000
+```
+
+### Azure Production
+```powershell
+./configure-azure-managed-identity.ps1   # One-time setup
+./upload-bigquery-key-to-keyvault.ps1    # Upload credentials  
+./deploy-to-azure.ps1                     # Deploy to Azure
+```
+
+**Result**: https://onbrdrp-devsand-wus-app-1.azurewebsites.net
 
 ---
 
